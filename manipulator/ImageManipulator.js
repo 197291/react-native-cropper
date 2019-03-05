@@ -33,10 +33,7 @@ class ImgManipulator extends Component {
             height: 0,
         }
 
-        this.maxSizes = {
-            width: 0,
-            height: 0,
-        }
+        this.maxSizes = { ...this.getMetricsOfImage(props.uri) }
 
         this.isResizing = false
 
@@ -82,7 +79,16 @@ class ImgManipulator extends Component {
     onToggleModal = () => {
         const { onToggleModal } = this.props
         onToggleModal()
-        this.setState({ cropMode: false })
+    }
+
+    getMetricsOfImage(uri) {
+        let width
+        let height
+        Image.getSize(uri, (imgWidth, imgHeight) => {
+            width = imgWidth
+            height = imgHeight
+        })
+        return { width, height }
     }
 
     onCropImage = () => {
