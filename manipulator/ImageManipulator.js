@@ -3,7 +3,6 @@ import {
     PanResponder, Dimensions, Image, ScrollView, Modal, View, Text, SafeAreaView,
 } from 'react-native'
 import * as Animatable from 'react-native-animatable'
-import { ImageManipulator, FileSystem } from 'expo'
 import PropTypes from 'prop-types'
 import AutoHeightImage from 'react-native-auto-height-image'
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -19,7 +18,6 @@ class ImgManipulator extends Component {
         super(props)
         const { photo } = this.props
         this.state = {
-            cropMode: false,
             uri: photo.uri,
         }
 
@@ -142,93 +140,7 @@ class ImgManipulator extends Component {
             // console.log('OUT OF BOUNDS X', isOutOfBoundsX)
             // const oldURI = uri
             // const { onPictureChoosed } = this.props
-            const isRemote = /^(http|https|ftp)?(?:[\:\/]*)([a-z0-9\.-]*)(?:\:([0-9]+))?(\/[^?#]*)?(?:\?([^#]*))?(?:#(.*))?$/.test(uri)
-            if (!isRemote) {
-                if (cropObj.height > 0 && cropObj.width > 0) {
-                    ImageManipulator.manipulateAsync(
-                        uri,
-                        [{
-                            crop: cropObj,
-                        }],
-                        { format: 'png' },
-                    ).then((manipResult) => {
-                        this.setState({ uri: manipResult.uri, cropMode: false })
-                        // this.onToggleModal()
-                        // onPictureChoosed(manipResult.uri)
-                        // setTimeout(() => {
-                        //     onPictureChoosed(oldURI)
-                        // }, 2000)
-                    }).catch(error => console.log(error))
-                }
-            } else {
-                FileSystem.downloadAsync(
-                    uri,
-                    FileSystem.documentDirectory + 'image',
-                ).then((localFile) => {
-                    if (cropObj.height > 0 && cropObj.width > 0) {
-                        ImageManipulator.manipulateAsync(
-                            localFile.uri,
-                            [{
-                                crop: cropObj,
-                            }],
-                            { format: 'png' },
-                        ).then((manipResult) => {
-                            this.setState({ uri: manipResult.uri, cropMode: false })
-                            // this.onToggleModal()
-                            // onPictureChoosed(manipResult.uri)
-                            // setTimeout(() => {
-                            //     onPictureChoosed(oldURI)
-                            // }, 2000)
-                        }).catch(error => console.log(error))
-                    }
-                }).catch(error => console.log(error))
-            }
         })
-        this.setState({ cropMode: false })
-    }
-
-    onRotateImage = () => {
-        // const { onPictureChoosed } = this.props
-        const { uri } = this.state
-        const isRemote = /^(http|https|ftp)?(?:[\:\/]*)([a-z0-9\.-]*)(?:\:([0-9]+))?(\/[^?#]*)?(?:\?([^#]*))?(?:#(.*))?$/.test(uri)
-        if (!isRemote) {
-            Image.getSize(uri, (width2, height2) => {
-                ImageManipulator.manipulateAsync(uri, [{
-                    rotate: -90,
-                }, {
-                    resize: {
-                        width: height2,
-                        height: width2,
-                    },
-                }], {
-                    compress: 1,
-                }).then((rotPhoto) => {
-                    // onPictureChoosed(rotPhoto.uri)
-                    this.setState({ uri: rotPhoto.uri })
-                })
-            })
-        } else {
-            FileSystem.downloadAsync(
-                uri,
-                FileSystem.documentDirectory + 'image',
-            ).then((localFile) => {
-                Image.getSize(localFile.uri, (width2, height2) => {
-                    ImageManipulator.manipulateAsync(uri, [{
-                        rotate: -90,
-                    }, {
-                        resize: {
-                            width: height2,
-                            height: width2,
-                        },
-                    }], {
-                        compress: 1,
-                    }).then((rotPhoto) => {
-                        // onPictureChoosed(rotPhoto.uri)
-                        this.setState({ uri: rotPhoto.uri })
-                    })
-                })
-            })
-        }
     }
 
     onHandleScroll = (event) => {
@@ -245,10 +157,8 @@ class ImgManipulator extends Component {
     )
 
     render() {
-        const { isVisible, onPictureChoosed } = this.props
-        const {
-            uri, cropMode,
-        } = this.state
+        const { isVisible } = this.props
+        const { uri } = this.state
         console.log('-------render ImageManiulator-------', this.props)
         return (
             <Modal
@@ -267,22 +177,9 @@ class ImgManipulator extends Component {
                     }}
                 >
                     {this.renderButtom('', this.onToggleModal, 'arrow-left')}
-                    {
-                        !cropMode
-                            ? (
-                                <View style={{ flexDirection: 'row' }}>
-                                    {this.renderButtom('Crop', () => {
-                                        this.setState({ cropMode: true })
-                                    }, 'crop')}
-                                    {this.renderButtom('Rotate', this.onRotateImage, 'rotate-left')}
-                                    {this.renderButtom('Done', () => {
-                                        onPictureChoosed(uri)
-                                        this.onToggleModal()
-                                    }, 'check')}
-                                </View>
-                            )
-                            : this.renderButtom('Done', this.onCropImage, 'check')
-                    }
+
+                    {this.renderButtom('Done', this.onCropImage, 'check')}
+
                 </SafeAreaView>
                 <View style={{ flex: 1, backgroundColor: 'black' }}>
                     <ScrollView
@@ -303,35 +200,30 @@ class ImgManipulator extends Component {
                                 this.maxSizes.height = event.nativeEvent.layout.height || 100
                             }}
                         />
-                        {
-                            !!cropMode
-                        && (
-                            <Animatable.View
-                                onLayout={(event) => {
-                                    this.currentSize.height = event.nativeEvent.layout.height
-                                    this.currentSize.width = event.nativeEvent.layout.width
-                                    this.currentPos.top = event.nativeEvent.layout.y
-                                    this.currentPos.left = event.nativeEvent.layout.x
-                                }}
-                                ref={(ref) => { this.square = ref }}
-                                {...this._panResponder.panHandlers}
-                                style={{
-                                    borderStyle: 'dashed',
-                                    borderRadius: 5,
-                                    borderWidth: 3,
-                                    borderColor: 'yellow',
-                                    flex: 1,
-                                    minHeight: 100,
-                                    width: this.maxSizes.width,
-                                    height: this.maxSizes.height,
-                                    position: 'absolute',
-                                    maxHeight: this.maxSizes.height,
-                                    maxWidth: this.maxSizes.width,
-                                    backgroundColor: 'rgba(0,0,0,0.5)',
-                                }}
-                            />
-                        )
-                        }
+                        <Animatable.View
+                            onLayout={(event) => {
+                                this.currentSize.height = event.nativeEvent.layout.height
+                                this.currentSize.width = event.nativeEvent.layout.width
+                                this.currentPos.top = event.nativeEvent.layout.y
+                                this.currentPos.left = event.nativeEvent.layout.x
+                            }}
+                            ref={(ref) => { this.square = ref }}
+                            {...this._panResponder.panHandlers}
+                            style={{
+                                borderStyle: 'dashed',
+                                borderRadius: 5,
+                                borderWidth: 3,
+                                borderColor: 'yellow',
+                                flex: 1,
+                                minHeight: 100,
+                                width: this.maxSizes.width,
+                                height: this.maxSizes.height,
+                                position: 'absolute',
+                                maxHeight: this.maxSizes.height,
+                                maxWidth: this.maxSizes.width,
+                                backgroundColor: 'rgba(0,0,0,0.5)',
+                            }}
+                        />
                     </ScrollView>
                 </View>
             </Modal>
