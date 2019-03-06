@@ -53,8 +53,8 @@ class ImgManipulator extends Component {
 
     // console.log('currentSize', this.currentSize);
     this.maxSizes = {
-      width: windowWidth,
-      height: windowHeight,
+      width: null,
+      height: null,
     };
 
     this.minHeight = squareMetrics.height;
@@ -83,10 +83,10 @@ class ImgManipulator extends Component {
         this.scrollView.setNativeProps({ scrollEnabled: false });
       },
       onPanResponderMove: (evt, gestureState) => {
-        // console.log('-----onPanResponderMove------', gestureState);
+        // console.log('-----onPanResponderMove------', gestureState, this.currentPos, this.currentSize);
         if (!this.isResizing && gestureState.x0 < this.currentPos.left + this.currentSize.width * 0.9) {
           const left = gestureState.moveX - this.currentSize.width / 2;
-          const top = gestureState.moveY + this.scrollOffset - this.currentSize.height / 2 - 45;
+          const top = gestureState.moveY + this.scrollOffset - this.currentSize.height / 2 - 85;
 
           this.square.transitionTo(
             {
@@ -142,7 +142,7 @@ class ImgManipulator extends Component {
       top: 0,
     };
 
-    const { fullSize } = this.props;
+    const { fullSize, photo } = this.props;
 
     if (metrics.length > 0 && !fullSize) {
       metricsDefault = { ...metrics[0] };
@@ -151,6 +151,7 @@ class ImgManipulator extends Component {
     if (fullSize) {
       metricsDefault.width = 0;
       metricsDefault.height = 0;
+      metricsDefault.aspect = [ photo.width, photo.height ];
     }
 
     return metricsDefault;
@@ -172,12 +173,19 @@ class ImgManipulator extends Component {
 
   calculateMetricsOfSquareCrop(imgWidthZip, imgHeightZip) {
     const { photo } = this.props;
-    if (this.currentSize && imgWidthZip && imgHeightZip) {
-      const ratioImgWidth = imgWidthZip / photo.width;
-      const ratioImgHeight = imgHeightZip / photo.height;
-      const cropWidth = this.currentSize.width * ratioImgWidth;
-      const cropHeight = this.currentSize.height * ratioImgHeight;
+    let cropWidth = DEFAULT_WIDTH;
+    let cropHeight = DEFAULT_HEIGHT;
+    const ratioImgWidth = imgWidthZip / photo.width;
+    const ratioImgHeight = imgHeightZip / photo.height;
+    cropWidth = this.currentSize.width * ratioImgWidth;
+    cropHeight = this.currentSize.height * ratioImgHeight;
 
+    return { cropWidth: cropWidth, cropHeight: cropHeight };
+  }
+
+  setMetricsOfSquareCrop(imgWidthZip, imgHeightZip) {
+    if (this.currentSize && imgWidthZip && imgHeightZip) {
+      const { cropWidth, cropHeight } = this.calculateMetricsOfSquareCrop(imgWidthZip, imgHeightZip);
       this.setCurrentSizes(cropWidth, cropHeight);
       this.setMinSizes(cropWidth, cropHeight);
 
@@ -254,32 +262,36 @@ class ImgManipulator extends Component {
     this.scrollOffset = event.nativeEvent.contentOffset.y;
   }
 
+  setCurrentPos(top = 0, left = 0) {
+    this.currentPos.top = top;
+    this.currentPos.left = left;
+  }
+
+  setAspect(aspect) {
+    this.aspect = aspect;
+  }
+
 
   handleChangePickerValue = (itemValue, itemIndex) => {
+    const { photo } = this.props;
     const choosenMetricOfSquare = this.state.metrics.find((metric) => metric.id === itemValue);
     if (!choosenMetricOfSquare.fullSize) {
       // console.log('-----------choosenMetricOfSquare-------', choosenMetricOfSquare);
-      this.currentPos.top = choosenMetricOfSquare.top;
-      this.currentPos.left = choosenMetricOfSquare.left;
-      this.currentSize.width = choosenMetricOfSquare.width;
-      this.currentSize.height = choosenMetricOfSquare.height;
-      this.aspect = choosenMetricOfSquare.aspect;
-      this.minHeight = choosenMetricOfSquare.height;
-      this.minWidth = choosenMetricOfSquare.width;
-
+      this.setCurrentPos(choosenMetricOfSquare.top, choosenMetricOfSquare.left);
+      this.setCurrentSizes(choosenMetricOfSquare.width, choosenMetricOfSquare.height);
+      this.setAspect(choosenMetricOfSquare.aspect);
+      const { cropWidth, cropHeight } = this.calculateMetricsOfSquareCrop(this.maxSizes.width, this.maxSizes.height);
+      this.setMinSizes(cropWidth, cropHeight);
       this.setSizesForSquareCrop(
-        choosenMetricOfSquare.width,
-        choosenMetricOfSquare.height,
+        cropWidth,
+        cropHeight,
         choosenMetricOfSquare.top,
         choosenMetricOfSquare.left
       );
     } else {
-      this.currentPos.top = 0;
-      this.currentPos.left = 0;
-      this.currentSize.width = this.maxSizes.width;
-      this.currentSize.height = this.maxSizes.height;
-      this.aspect = null;
-      // console.log('-----------windowHeight-------', windowHeight);
+      this.setCurrentPos();
+      this.setCurrentSizes(this.maxSizes.width, this.maxSizes.height);
+      this.aspect = [ photo.width, photo.height ];
       this.setSizesForSquareCrop(this.maxSizes.width, this.maxSizes.height);
     }
 
@@ -448,7 +460,7 @@ class ImgManipulator extends Component {
                 if (fullSize) {
                   this.setFullSizeMetrics(event.nativeEvent);
                 } else {
-                  this.calculateMetricsOfSquareCrop(event.nativeEvent.layout.width, event.nativeEvent.layout.height);
+                  this.setMetricsOfSquareCrop(event.nativeEvent.layout.width, event.nativeEvent.layout.height);
                 }
               }}
             />
@@ -456,10 +468,10 @@ class ImgManipulator extends Component {
             <Animatable.View
               onLayout={(event) => {
                 // console.log('-----event----', event.nativeEvent.layout);
-                // this.currentSize.height = event.nativeEvent.layout.height;
-                // this.currentSize.width = event.nativeEvent.layout.width;
-                // this.currentPos.top = event.nativeEvent.layout.y;
-                // this.currentPos.left = event.nativeEvent.layout.x;
+                this.currentSize.height = event.nativeEvent.layout.height;
+                this.currentSize.width = event.nativeEvent.layout.width;
+                this.currentPos.top = event.nativeEvent.layout.y;
+                this.currentPos.left = event.nativeEvent.layout.x;
               }}
               ref={(ref) => {
                 this.square = ref;
