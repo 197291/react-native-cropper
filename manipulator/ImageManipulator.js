@@ -151,6 +151,7 @@ class ImgManipulator extends Component {
     this.props.onToggleModal();
   }
 
+    const { photo } = this.props;
   onCropImage = () => {
     let imgWidth = 0;
     let imgHeight = 0;
