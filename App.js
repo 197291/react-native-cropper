@@ -33,13 +33,20 @@ export default class App extends React.Component {
             isVisible={isVisible}
             onPictureChoosed={(uriM) => this.setState({ uri: uriM })}
             onToggleModal={this.onToggleModal}
-            fullSize={true}
+            // fullSize={true}
             metrics={[ {
               top: 50,
               left: 50,
-              width: 200,
-              height: 100,
+              width: 600,
+              height: 300,
               aspect: [ 2, 1 ]
+            },
+            {
+              top: 0,
+              left: 0,
+              width: 400,
+              height: 100,
+              aspect: [ 4, 1 ]
             } ]}
           />
         )}
