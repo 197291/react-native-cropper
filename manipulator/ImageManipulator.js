@@ -27,10 +27,16 @@ const FULL_SIZE = {
 class ImgManipulator extends Component {
   constructor(props) {
     super(props);
-    const { photo, fullSize } = this.props;
+    const { photo } = this.props;
 
+    const metrics = this.createMetrics();
+    this.state = {
+      uri: photo.uri,
+      metrics: metrics,
+      selectedAspect: metrics[0].id
+    };
 
-    const squareMetrics = this.getDefaultSquareMetrics();
+    const squareMetrics = this.getDefaultSquareMetrics(metrics);
 
     this.scrollOffset = 0;
 
@@ -55,12 +61,7 @@ class ImgManipulator extends Component {
     this.minWidth = squareMetrics.width;
 
     this.isResizing = false;
-    const metrics = this.createMetrics();
-    this.state = {
-      uri: photo.uri,
-      metrics: metrics,
-      selectedAspect: metrics[0].id
-    };
+
 
     this._panResponder = PanResponder.create({
       // Ask to be the responder:
@@ -124,17 +125,18 @@ class ImgManipulator extends Component {
   }
 
 
-  getDefaultSquareMetrics() {
+  getDefaultSquareMetrics(metrics) {
     let metricsDefault = {
       width: DEFAULT_WIDTH,
       height: DEFAULT_HEIGHT,
       left: 0,
       top: 0,
     };
-    const { metrics, fullSize, photo } = this.props;
+
+    const { fullSize, photo } = this.props;
 
     if (metrics.length > 0 && !fullSize) {
-      metricsDefault = { ...this.props.metrics[0] };
+      metricsDefault = { ...metrics[1] };
     }
 
     if (fullSize) {
@@ -291,14 +293,16 @@ class ImgManipulator extends Component {
     return this.aspect && this.aspect.length > 0 && this.aspect.every((itm) => Number.isInteger(itm));
   }
 
-  renderButton = (title, action, icon) => (
-    <HybridTouch onPress={action}>
-      <View style={{ padding: 10, flexDirection: 'row', alignItems: 'center' }}>
-        <Icon size={20} name={icon} color="white" />
-        <Text style={{ color: 'white', fontSize: 15, marginLeft: 5 }}>{title}</Text>
-      </View>
-    </HybridTouch>
-  )
+  renderButton = (title, action, icon) => {
+    return (
+      <HybridTouch onPress={action}>
+        <View style={{ padding: 10, flexDirection: 'row', alignItems: 'center' }}>
+          <Icon size={20} name={icon} color="white" />
+          <Text style={{ color: 'white', fontSize: 15, marginLeft: 5 }}>{title}</Text>
+        </View>
+      </HybridTouch>
+    );
+  }
 
   render() {
     const { isVisible } = this.props;
@@ -308,6 +312,8 @@ class ImgManipulator extends Component {
       return null;
     }
     console.log('this.currentSize', this.currentSize);
+    const { width, height } = this.currentSize;
+    const { top, left } = this.currentPos;
     return (
       <Modal
         animationType="slide"
@@ -330,10 +336,8 @@ class ImgManipulator extends Component {
           <Picker
             mode="dropdown"
             textStyle={{ color: 'white' }}
-            headerStyle={{ color: 'white' }}
-            itemStyle={{ color: 'white' }}
-            // itemTextStyle={{ color: 'white' }}
-            headerTitleStyle={{ color: 'white' }}
+            itemTextStyle={{ color: 'black' }}
+            headerTitleStyle={{ color: 'black' }}
             selectedValue={this.state.selectedAspect}
             style={{ height: 50, width: 100 }}
             onValueChange={this.handleChangePickerValue}
@@ -360,9 +364,6 @@ class ImgManipulator extends Component {
               onLayout={(event) => {
                 this.maxSizes.width = event.nativeEvent.layout.width || 100;
                 this.maxSizes.height = event.nativeEvent.layout.height || 100;
-                if (this.props.fullSize) {
-                  this.currentSize.height = event.nativeEvent.layout.height || 100;
-                }
               }}
             />
             <Animatable.View
@@ -383,12 +384,12 @@ class ImgManipulator extends Component {
                 borderColor: 'yellow',
                 flex: 1,
                 minHeight: this.minHeight,
-                width: this.currentSize.width,
-                height: this.currentSize.height,
+                width: width,
+                height: height,
                 position: 'absolute',
                 maxHeight: this.maxSizes.height,
-                top: this.currentPos.top || 0,
-                left: this.currentPos.left || 0,
+                top: top || 0,
+                left: left || 0,
                 maxWidth: this.maxSizes.width,
                 backgroundColor: 'rgba(0,0,0,0.5)',
               }}
