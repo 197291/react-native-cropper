@@ -305,14 +305,35 @@ class ImgManipulator extends Component {
     );
   }
 
+  setSizesForSquareCrop(width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, top = 0, left = 0) {
+    if (this.square) {
+      this.square.transitionTo(
+        { width: width,
+          height: height,
+          top: top,
+          left: left,
+        },
+        0,
+      );
+    }
+  }
+
+  setFullSizeMetrics = (eventNative) => {
+    // console.log('------eventNative----', eventNative);
+    this.currentSize.height = eventNative.layout.height || 100;
+    this.currentSize.width = eventNative.layout.width || 100;
+    this.setSizesForSquareCrop(eventNative.layout.width, eventNative.layout.height);
+    this.forceUpdate();
+  }
+
   render() {
-    const { isVisible } = this.props;
+    const { isVisible, fullSize } = this.props;
     const { uri } = this.state;
 
     if (!uri) {
       return null;
     }
-    console.log('this.currentSize', this.currentSize);
+    // console.log('-----this.currentSize----this.currentPos----', this.currentSize, this.currentPos);
     const { width, height } = this.currentSize;
     const { top, left } = this.currentPos;
     return (
