@@ -31,6 +31,7 @@ module.exports = exports = {
         // React
         "react/destructuring-assignment": OFF,
         "react/jsx-boolean-value": OFF,
+        "react/sort-comp": OFF,
         // Allowed a getter without setter, but all setters require getters
         "accessor-pairs": [ ERROR, {
             "getWithoutSet": false,
