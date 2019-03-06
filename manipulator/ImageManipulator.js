@@ -33,7 +33,7 @@ class ImgManipulator extends Component {
     this.state = {
       uri: photo.uri,
       metrics: metrics,
-      selectedAspect: metrics[0].id
+      selectedAspect: metrics[0].id,
     };
 
     const squareMetrics = this.getDefaultSquareMetrics(metrics);
@@ -46,12 +46,12 @@ class ImgManipulator extends Component {
     };
 
     this.aspect = squareMetrics.aspect || null;
-
     this.currentSize = {
       width: squareMetrics.width,
       height: squareMetrics.height,
     };
 
+    // console.log('currentSize', this.currentSize);
     this.maxSizes = {
       width: windowWidth,
       height: windowHeight,
@@ -62,6 +62,15 @@ class ImgManipulator extends Component {
 
     this.isResizing = false;
 
+    // square metrics for initial render
+    this.squareSize = {
+      width: squareMetrics.top,
+      height: squareMetrics.height,
+    };
+    this.squareCoords = {
+      left: squareMetrics.left,
+      top: squareMetrics.top,
+    };
 
     this._panResponder = PanResponder.create({
       // Ask to be the responder:
@@ -133,15 +142,15 @@ class ImgManipulator extends Component {
       top: 0,
     };
 
-    const { fullSize, photo } = this.props;
+    const { fullSize } = this.props;
 
     if (metrics.length > 0 && !fullSize) {
-      metricsDefault = { ...metrics[1] };
+      metricsDefault = { ...metrics[0] };
     }
 
     if (fullSize) {
-      metricsDefault.width = photo.width;
-      metricsDefault.height = windowHeight;
+      metricsDefault.width = 0;
+      metricsDefault.height = 0;
     }
 
     return metricsDefault;
@@ -151,7 +160,37 @@ class ImgManipulator extends Component {
     this.props.onToggleModal();
   }
 
+  setCurrentSizes = (width, height) => {
+    this.currentSize.width = width;
+    this.currentSize.height = height;
+  }
+
+  setMinSizes = (width, height) => {
+    this.minHeight = height;
+    this.minWidth = width;
+  }
+
+  calculateMetricsOfSquareCrop(imgWidthZip, imgHeightZip) {
     const { photo } = this.props;
+    if (this.currentSize && imgWidthZip && imgHeightZip) {
+      const ratioImgWidth = imgWidthZip / photo.width;
+      const ratioImgHeight = imgHeightZip / photo.height;
+      const cropWidth = this.currentSize.width * ratioImgWidth;
+      const cropHeight = this.currentSize.height * ratioImgHeight;
+
+      this.setCurrentSizes(cropWidth, cropHeight);
+      this.setMinSizes(cropWidth, cropHeight);
+
+      this.setSizesForSquareCrop(
+        cropWidth,
+        cropHeight,
+        this.currentPos.top,
+        this.currentPos.left
+      );
+      this.forceUpdate();
+    }
+  }
+
   onCropImage = () => {
     let imgWidth = 0;
     let imgHeight = 0;
@@ -219,19 +258,29 @@ class ImgManipulator extends Component {
   handleChangePickerValue = (itemValue, itemIndex) => {
     const choosenMetricOfSquare = this.state.metrics.find((metric) => metric.id === itemValue);
     if (!choosenMetricOfSquare.fullSize) {
-      console.log('-----------choosenMetricOfSquare-------', choosenMetricOfSquare);
+      // console.log('-----------choosenMetricOfSquare-------', choosenMetricOfSquare);
       this.currentPos.top = choosenMetricOfSquare.top;
       this.currentPos.left = choosenMetricOfSquare.left;
       this.currentSize.width = choosenMetricOfSquare.width;
       this.currentSize.height = choosenMetricOfSquare.height;
       this.aspect = choosenMetricOfSquare.aspect;
+      this.minHeight = choosenMetricOfSquare.height;
+      this.minWidth = choosenMetricOfSquare.width;
+
+      this.setSizesForSquareCrop(
+        choosenMetricOfSquare.width,
+        choosenMetricOfSquare.height,
+        choosenMetricOfSquare.top,
+        choosenMetricOfSquare.left
+      );
     } else {
       this.currentPos.top = 0;
       this.currentPos.left = 0;
-      this.currentSize.width = windowWidth;
-      this.currentSize.height = windowHeight;
+      this.currentSize.width = this.maxSizes.width;
+      this.currentSize.height = this.maxSizes.height;
       this.aspect = null;
-      console.log('-----------windowHeight-------', windowHeight);
+      // console.log('-----------windowHeight-------', windowHeight);
+      this.setSizesForSquareCrop(this.maxSizes.width, this.maxSizes.height);
     }
 
     this.setState({ selectedAspect: itemValue });
@@ -354,18 +403,27 @@ class ImgManipulator extends Component {
         >
           {this.renderButton('', this.onToggleModal, 'arrow-left')}
 
-          {this.renderButton('Done', this.onCropImage, 'check')}
-          <Picker
-            mode="dropdown"
-            textStyle={{ color: 'white' }}
-            itemTextStyle={{ color: 'black' }}
-            headerTitleStyle={{ color: 'black' }}
-            selectedValue={this.state.selectedAspect}
-            style={{ height: 50, width: 100 }}
-            onValueChange={this.handleChangePickerValue}
+          <View
+            style={{
+              justifyContent: 'flex-start',
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
           >
-            {this.renderPickerOptions()}
-          </Picker>
+            {this.renderButton('', this.onCropImage, 'check')}
+            <Icon size={20} name="menu-down" color="white" />
+            <Picker
+              mode="dropdown"
+              textStyle={{ color: 'white' }}
+              itemTextStyle={{ color: 'black' }}
+              headerTitleStyle={{ color: 'black' }}
+              selectedValue={this.state.selectedAspect}
+              style={{ height: 50, width: 70 }}
+              onValueChange={this.handleChangePickerValue}
+            >
+              {this.renderPickerOptions()}
+            </Picker>
+          </View>
         </SafeAreaView>
         <View style={{ flex: 1, backgroundColor: 'black' }}>
           <ScrollView
@@ -384,17 +442,24 @@ class ImgManipulator extends Component {
               resizeMode="contain"
               width={windowWidth}
               onLayout={(event) => {
+                // console.log('-----AutoHeightImage-----', event);
                 this.maxSizes.width = event.nativeEvent.layout.width || 100;
                 this.maxSizes.height = event.nativeEvent.layout.height || 100;
+                if (fullSize) {
+                  this.setFullSizeMetrics(event.nativeEvent);
+                } else {
+                  this.calculateMetricsOfSquareCrop(event.nativeEvent.layout.width, event.nativeEvent.layout.height);
+                }
               }}
             />
+
             <Animatable.View
               onLayout={(event) => {
                 // console.log('-----event----', event.nativeEvent.layout);
-                this.currentSize.height = event.nativeEvent.layout.height;
-                this.currentSize.width = event.nativeEvent.layout.width;
-                this.currentPos.top = event.nativeEvent.layout.y;
-                this.currentPos.left = event.nativeEvent.layout.x;
+                // this.currentSize.height = event.nativeEvent.layout.height;
+                // this.currentSize.width = event.nativeEvent.layout.width;
+                // this.currentPos.top = event.nativeEvent.layout.y;
+                // this.currentPos.left = event.nativeEvent.layout.x;
               }}
               ref={(ref) => {
                 this.square = ref;
@@ -428,7 +493,7 @@ export default ImgManipulator;
 
 ImgManipulator.defaultProps = {
   onPictureChoosed: (uri) => console.log('URI:', uri),
-  fullSize: true,
+  fullSize: false,
   defaultWidth: DEFAULT_WIDTH,
   defaultHeight: DEFAULT_HEIGHT,
   metrics: []
