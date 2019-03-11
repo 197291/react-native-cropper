@@ -36,7 +36,8 @@ export default class App extends React.Component {
             // metrics={null}
             // aspect={[ [ 100 ], [ 4, 1 ] ]}
             metrics={{ left: 1149, top: 2130, height: 1009, width: 2691 }}
-            aspect={[ [ 10, 1 ], [ 4, 2 ], [ 100 ] ]}
+            aspect={[ [ 10, 1 ] ]}
+            // aspect={[ [ 10, 1 ], [ 4, 2 ], [ 100 ] ]}
           />
         )}
       </ImageBackground>

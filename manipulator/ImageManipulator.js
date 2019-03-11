@@ -409,7 +409,7 @@ class ImgManipulator extends Component {
             }}
           >
             {this.renderButton('', this.onCropImage, 'check')}
-            <Icon size={20} name="menu-down" color="white" />
+            {this.props.aspect.length > 1 && <Icon size={20} name="menu-down" color="white" /> }
             {this.props.aspect.length > 1 && (
               <Picker
                 mode="dropdown"
