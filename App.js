@@ -5,7 +5,7 @@ import ImageManipulator from './manipulator/ImageManipulator';
 export default class App extends React.Component {
   state = {
     isVisible: false,
-    uri: 'http://res.cloudinary.com/hotelcloud-dev/image/upload/v1551767421/permanent/vuyfoong5t1jmk65sqla.png',
+    uri: 'https://res.cloudinary.com/hotelcloud-dev/image/upload/v1551338194/permanent/eb3cb5082af1063ecd0b4603e74a4494e56ae3d01cb012429df1c67b_rgktb8.jpg',
   }
   onToggleModal = () => {
     const { isVisible } = this.state;
@@ -27,27 +27,16 @@ export default class App extends React.Component {
           <ImageManipulator
             photo={{
               uri: uri,
-              width: 1125,
-              height: 750
+              width: 3994,
+              height: 3993
             }}
             isVisible={isVisible}
             onPictureChoosed={(uriM) => this.setState({ uri: uriM })}
             onToggleModal={this.onToggleModal}
-            // fullSize={true}
-            metrics={[ {
-              top: 50,
-              left: 50,
-              width: 600,
-              height: 300,
-              aspect: [ 2, 1 ]
-            },
-            {
-              top: 0,
-              left: 0,
-              width: 400,
-              height: 100,
-              aspect: [ 4, 1 ]
-            } ]}
+            // metrics={null}
+            // aspect={[ [ 100 ] ]}
+            metrics={{ left: 1149, top: 2130, height: 1009, width: 2691 }}
+            aspect={[ [ 2, 1 ], [ 4, 1 ], [ 100 ] ]}
           />
         )}
       </ImageBackground>

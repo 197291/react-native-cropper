@@ -12,9 +12,10 @@ import uuid from 'uuid';
 import HybridTouch from '../HybridTouch';
 // eslint-enable-next-line import/no-extraneous-dependencies
 
+import getDefaultCrop from './utils';
 
 const windowWidth = Dimensions.get('window').width;
-const windowHeight = Dimensions.get('window').height - 20;
+// const windowHeight = Dimensions.get('window').height - 20;
 
 const DEFAULT_WIDTH = 200;
 const DEFAULT_HEIGHT = 100;
@@ -27,13 +28,11 @@ const FULL_SIZE = {
 class ImgManipulator extends Component {
   constructor(props) {
     super(props);
-    const { photo } = this.props;
+    const { photo, aspect, metrics } = this.props;
 
-    const metrics = this.createMetrics();
     this.state = {
       uri: photo.uri,
       metrics: metrics,
-      selectedAspect: metrics[0].id,
     };
 
     const squareMetrics = this.getDefaultSquareMetrics(metrics);
@@ -45,13 +44,12 @@ class ImgManipulator extends Component {
       top: squareMetrics.top,
     };
 
-    this.aspect = squareMetrics.aspect || null;
+    this.aspect = !metrics ? aspect[0] : [ metrics.width, metrics.height ];
     this.currentSize = {
       width: squareMetrics.width,
       height: squareMetrics.height,
     };
 
-    // console.log('currentSize', this.currentSize);
     this.maxSizes = {
       width: null,
       height: null,
@@ -61,16 +59,6 @@ class ImgManipulator extends Component {
     this.minWidth = squareMetrics.width;
 
     this.isResizing = false;
-
-    // square metrics for initial render
-    this.squareSize = {
-      width: squareMetrics.top,
-      height: squareMetrics.height,
-    };
-    this.squareCoords = {
-      left: squareMetrics.left,
-      top: squareMetrics.top,
-    };
 
     this._panResponder = PanResponder.create({
       // Ask to be the responder:
@@ -142,16 +130,14 @@ class ImgManipulator extends Component {
       top: 0,
     };
 
-    const { fullSize, photo } = this.props;
+    const { photo, aspect } = this.props;
 
-    if (metrics.length > 0 && !fullSize) {
-      metricsDefault = { ...metrics[0] };
-    }
-
-    if (fullSize) {
-      metricsDefault.width = 0;
-      metricsDefault.height = 0;
-      metricsDefault.aspect = [ photo.width, photo.height ];
+    if (metrics) {
+      metricsDefault = { ...metrics };
+    } else {
+      const asp = aspect[0];
+      metricsDefault = { ...metricsDefault, ...getDefaultCrop(photo.width, photo.height, asp[0], asp[1]) };
+      console.log('----metricsDefault----', metricsDefault);
     }
 
     return metricsDefault;
@@ -161,7 +147,7 @@ class ImgManipulator extends Component {
     this.props.onToggleModal();
   }
 
-  setCurrentSizes = (width, height) => {
+  setCurrentSizes = (width = 100, height = 100) => {
     this.currentSize.width = width;
     this.currentSize.height = height;
   }
@@ -179,8 +165,19 @@ class ImgManipulator extends Component {
     const ratioImgHeight = imgHeightZip / photo.height;
     cropWidth = this.currentSize.width * ratioImgWidth;
     cropHeight = this.currentSize.height * ratioImgHeight;
-
+    // console.log('--------cropWidth, cropHeight--------', cropWidth, cropHeight);
     return { cropWidth: cropWidth, cropHeight: cropHeight };
+  }
+
+  calculateCurrentPosition(imgWidthZip, imgHeightZip) {
+    const { photo } = this.props;
+    let left = 0;
+    let top = 0;
+    const ratioImgWidth = imgWidthZip / photo.width;
+    const ratioImgHeight = imgHeightZip / photo.height;
+    left = this.currentPos.left * ratioImgWidth;
+    top = this.currentPos.top * ratioImgHeight;
+    return { topCoord: top, leftCoord: left };
   }
 
   setMetricsOfSquareCrop(imgWidthZip, imgHeightZip) {
@@ -188,12 +185,21 @@ class ImgManipulator extends Component {
       const { cropWidth, cropHeight } = this.calculateMetricsOfSquareCrop(imgWidthZip, imgHeightZip);
       this.setCurrentSizes(cropWidth, cropHeight);
       this.setMinSizes(cropWidth, cropHeight);
+      let top = this.currentPos.top;
+      let left = this.currentPos.left;
+
+      if (this.props.metrics) {
+        const { topCoord, leftCoord } = this.calculateCurrentPosition(imgWidthZip, imgHeightZip);
+        top = topCoord;
+        left = leftCoord;
+        this.setCurrentPos(top, left);
+      }
 
       this.setSizesForSquareCrop(
         cropWidth,
         cropHeight,
-        this.currentPos.top,
-        this.currentPos.left
+        top,
+        left
       );
       this.forceUpdate();
     }
@@ -239,22 +245,12 @@ class ImgManipulator extends Component {
       }
 
       const cropObj = {
-        originX: originX,
-        originY: originY,
-        width: cropWidth,
-        height: cropHeight,
+        originX: Math.round(originX),
+        originY: Math.round(originY),
+        width: Math.round(cropWidth),
+        height: Math.round(cropHeight),
       };
       console.log('cropObj', cropObj);
-      // console.log('onPanResponderRelease', cropObj)
-      // console.log('imgHeight', imgHeight)
-      // console.log('this.maxSizes.height', maxSizes.height)
-      // console.log('offsetMaxHeight', offsetMaxHeight)
-      // console.log('offsetMaxHeight', offsetMaxHeight)
-      // console.log('OUT OF BOUNDS Y', isOutOfBoundsY)
-      // console.log('offsetMaxWidth', offsetMaxWidth)
-      // console.log('OUT OF BOUNDS X', isOutOfBoundsX)
-      // const oldURI = uri
-      // const { onPictureChoosed } = this.props
     });
   }
 
@@ -302,24 +298,9 @@ class ImgManipulator extends Component {
     return `${aspect[0]}:${aspect[1]}`;
   }
 
-  createMetrics() {
-    const { fullSize, metrics } = this.props;
-    const metricsFull = fullSize ? [ FULL_SIZE ].concat(metrics) : metrics;
-    return metricsFull.map((metric) => {
-      return {
-        ...metric,
-        id: uuid()
-      };
-    });
-  }
-
   renderPickerOptions = () => {
-    const { metrics } = this.state;
-
-    return metrics.map((metric) => {
-      return metric.fullSize
-        ? <Picker.Item style={{ color: 'white' }} key="fullsize" label="100%" value={metric.id} />
-        : <Picker.Item style={{ color: 'white' }} key={metric.width + 'key'} label={this.getLabelAspect(metric.aspect)} value={metric.id} />;
+    return this.props.aspect.map((aspect, i) => {
+      return <Picker.Item style={{ color: 'white' }} key={i + 'key'} label={this.getLabelAspect(aspect)} value={i + 1} />;
     });
   }
 
@@ -380,21 +361,19 @@ class ImgManipulator extends Component {
   }
 
   setFullSizeMetrics = (eventNative) => {
-    // console.log('------eventNative----', eventNative);
-    this.currentSize.height = eventNative.layout.height || 100;
-    this.currentSize.width = eventNative.layout.width || 100;
+    this.setCurrentSizes(eventNative.layout.width, eventNative.layout.height);
     this.setSizesForSquareCrop(eventNative.layout.width, eventNative.layout.height);
     this.forceUpdate();
   }
 
   render() {
-    const { isVisible, fullSize } = this.props;
+    const { isVisible, translation } = this.props;
     const { uri } = this.state;
 
     if (!uri) {
       return null;
     }
-    // console.log('-----this.currentSize----this.currentPos----', this.currentSize, this.currentPos);
+
     const { width, height } = this.currentSize;
     const { top, left } = this.currentPos;
     return (
@@ -424,17 +403,20 @@ class ImgManipulator extends Component {
           >
             {this.renderButton('', this.onCropImage, 'check')}
             <Icon size={20} name="menu-down" color="white" />
-            <Picker
+            {/* <Picker
               mode="dropdown"
               textStyle={{ color: 'white' }}
               itemTextStyle={{ color: 'black' }}
               headerTitleStyle={{ color: 'black' }}
               selectedValue={this.state.selectedAspect}
-              style={{ height: 50, width: 70 }}
+              style={{ height: 50, width: 'auto' }}
               onValueChange={this.handleChangePickerValue}
-            >
-              {this.renderPickerOptions()}
-            </Picker>
+              placeholder={translation.placeholderPicker}
+              placeholderStyle={{ color: 'white' }}
+            > */}
+            {/* {this.props.fullSize && <Picker.Item style={{ color: 'white' }} key={0 + 'key'} label="100%" value={0} />} */}
+            {/* {this.renderPickerOptions()}
+            </Picker> */}
           </View>
         </SafeAreaView>
         <View style={{ flex: 1, backgroundColor: 'black' }}>
@@ -457,7 +439,7 @@ class ImgManipulator extends Component {
                 // console.log('-----AutoHeightImage-----', event);
                 this.maxSizes.width = event.nativeEvent.layout.width || 100;
                 this.maxSizes.height = event.nativeEvent.layout.height || 100;
-                if (fullSize) {
+                if (this.props.aspect.length === 1 && !this.props.metrics && this.props.aspect[0].length === 1) {
                   this.setFullSizeMetrics(event.nativeEvent);
                 } else {
                   this.setMetricsOfSquareCrop(event.nativeEvent.layout.width, event.nativeEvent.layout.height);
@@ -508,17 +490,24 @@ ImgManipulator.defaultProps = {
   fullSize: false,
   defaultWidth: DEFAULT_WIDTH,
   defaultHeight: DEFAULT_HEIGHT,
-  metrics: []
+  metrics: null,
+  aspect: [],
+  translation: {
+    placeholderPicker: 'Select aspect'
+  },
 };
 
 ImgManipulator.propTypes = {
-  metrics: PropTypes.arrayOf(PropTypes.shape({
+  metrics: PropTypes.shape({
     top: PropTypes.number.isRequired,
     left: PropTypes.number.isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
-    aspect: PropTypes.arrayOf(PropTypes.number),
-  })),
+  }),
+  translation: PropTypes.shape({
+    placeholderPicker: PropTypes.string,
+  }),
+  aspect: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
   defaultWidth: PropTypes.number,
   defaultHeight: PropTypes.number,
   fullSize: PropTypes.bool,
