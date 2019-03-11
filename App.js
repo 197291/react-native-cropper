@@ -34,9 +34,9 @@ export default class App extends React.Component {
             onPictureChoosed={(uriM) => this.setState({ uri: uriM })}
             onToggleModal={this.onToggleModal}
             // metrics={null}
-            // aspect={[ [ 100 ] ]}
+            // aspect={[ [ 100 ], [ 4, 1 ] ]}
             metrics={{ left: 1149, top: 2130, height: 1009, width: 2691 }}
-            aspect={[ [ 2, 1 ], [ 4, 1 ], [ 100 ] ]}
+            aspect={[ [ 10, 1 ], [ 4, 2 ], [ 100 ] ]}
           />
         )}
       </ImageBackground>

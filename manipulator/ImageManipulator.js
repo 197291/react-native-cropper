@@ -29,14 +29,12 @@ class ImgManipulator extends Component {
   constructor(props) {
     super(props);
     const { photo, aspect, metrics } = this.props;
+    const squareMetrics = this.getDefaultSquareMetrics(metrics);
 
     this.state = {
       uri: photo.uri,
-      metrics: metrics,
+      metrics: squareMetrics,
     };
-
-    const squareMetrics = this.getDefaultSquareMetrics(metrics);
-
     this.scrollOffset = 0;
 
     this.currentPos = {
@@ -137,7 +135,6 @@ class ImgManipulator extends Component {
     } else {
       const asp = aspect[0];
       metricsDefault = { ...metricsDefault, ...getDefaultCrop(photo.width, photo.height, asp[0], asp[1]) };
-      console.log('----metricsDefault----', metricsDefault);
     }
 
     return metricsDefault;
@@ -165,7 +162,7 @@ class ImgManipulator extends Component {
     const ratioImgHeight = imgHeightZip / photo.height;
     cropWidth = this.currentSize.width * ratioImgWidth;
     cropHeight = this.currentSize.height * ratioImgHeight;
-    // console.log('--------cropWidth, cropHeight--------', cropWidth, cropHeight);
+    // console.log('cropWidth, cropHeight', cropWidth, cropHeight);
     return { cropWidth: cropWidth, cropHeight: cropHeight };
   }
 
@@ -213,7 +210,6 @@ class ImgManipulator extends Component {
     Image.getSize(uri, (width2, height2) => {
       imgWidth = width2;
       imgHeight = height2;
-      console.log('width, height', imgWidth, imgHeight, this.maxSizes.height, this.maxSizes.width);
       const heightRatio = this.currentSize.height / this.maxSizes.height;
       const offsetHeightRatio = this.currentPos.top / this.maxSizes.height;
 
@@ -267,22 +263,33 @@ class ImgManipulator extends Component {
     this.aspect = aspect;
   }
 
+  calculateNewCropInAccordingToNewAspect(cropWidth) {
+    const aspect = this.aspect[0] / this.aspect[1];
+    const height = cropWidth / aspect;
+    return height;
+  }
+
 
   handleChangePickerValue = (itemValue, itemIndex) => {
     const { photo } = this.props;
-    const choosenMetricOfSquare = this.state.metrics.find((metric) => metric.id === itemValue);
-    if (!choosenMetricOfSquare.fullSize) {
-      // console.log('-----------choosenMetricOfSquare-------', choosenMetricOfSquare);
-      this.setCurrentPos(choosenMetricOfSquare.top, choosenMetricOfSquare.left);
-      this.setCurrentSizes(choosenMetricOfSquare.width, choosenMetricOfSquare.height);
-      this.setAspect(choosenMetricOfSquare.aspect);
+    const choosenAspect = this.props.aspect.find((metric, index) => index === itemValue);
+    console.log('itemValue, choosenAspect', itemValue, choosenAspect);
+    if (choosenAspect.length > 1) {
+      // CHECK if metrics = null
+      this.setCurrentPos(this.props.metrics.top, this.props.metrics.left);
+      this.setCurrentSizes(this.props.metrics.width, this.props.metrics.height);
+      this.setAspect(choosenAspect);
       const { cropWidth, cropHeight } = this.calculateMetricsOfSquareCrop(this.maxSizes.width, this.maxSizes.height);
-      this.setMinSizes(cropWidth, cropHeight);
+
+      const width = cropWidth;
+      const height = this.calculateNewCropInAccordingToNewAspect(cropWidth);
+      const { topCoord, leftCoord } = this.calculateCurrentPosition(this.maxSizes.width, this.maxSizes.height);
+      this.setMinSizes(width, height);
       this.setSizesForSquareCrop(
-        cropWidth,
-        cropHeight,
-        choosenMetricOfSquare.top,
-        choosenMetricOfSquare.left
+        width,
+        height,
+        topCoord,
+        leftCoord
       );
     } else {
       this.setCurrentPos();
@@ -295,12 +302,12 @@ class ImgManipulator extends Component {
   }
 
   getLabelAspect = (aspect) => {
-    return `${aspect[0]}:${aspect[1]}`;
+    return aspect.length > 1 ? `${aspect[0]}:${aspect[1]}` : `${aspect[0]}%`;
   }
 
   renderPickerOptions = () => {
-    return this.props.aspect.map((aspect, i) => {
-      return <Picker.Item style={{ color: 'white' }} key={i + 'key'} label={this.getLabelAspect(aspect)} value={i + 1} />;
+    return this.props.aspect.map((aspect, index) => {
+      return <Picker.Item style={{ color: 'white' }} key={index + 'key'} label={this.getLabelAspect(aspect)} value={index} />;
     });
   }
 
@@ -403,20 +410,21 @@ class ImgManipulator extends Component {
           >
             {this.renderButton('', this.onCropImage, 'check')}
             <Icon size={20} name="menu-down" color="white" />
-            {/* <Picker
-              mode="dropdown"
-              textStyle={{ color: 'white' }}
-              itemTextStyle={{ color: 'black' }}
-              headerTitleStyle={{ color: 'black' }}
-              selectedValue={this.state.selectedAspect}
-              style={{ height: 50, width: 'auto' }}
-              onValueChange={this.handleChangePickerValue}
-              placeholder={translation.placeholderPicker}
-              placeholderStyle={{ color: 'white' }}
-            > */}
-            {/* {this.props.fullSize && <Picker.Item style={{ color: 'white' }} key={0 + 'key'} label="100%" value={0} />} */}
-            {/* {this.renderPickerOptions()}
-            </Picker> */}
+            {this.props.aspect.length > 1 && (
+              <Picker
+                mode="dropdown"
+                textStyle={{ color: 'white' }}
+                itemTextStyle={{ color: 'black' }}
+                headerTitleStyle={{ color: 'black' }}
+                selectedValue={this.state.selectedAspect}
+                style={{ height: 50, width: 'auto' }}
+                onValueChange={this.handleChangePickerValue}
+                placeholder={translation.placeholderPicker}
+                placeholderStyle={{ color: 'white' }}
+              >
+                {this.renderPickerOptions()}
+              </Picker>
+            )}
           </View>
         </SafeAreaView>
         <View style={{ flex: 1, backgroundColor: 'black' }}>
@@ -439,7 +447,7 @@ class ImgManipulator extends Component {
                 // console.log('-----AutoHeightImage-----', event);
                 this.maxSizes.width = event.nativeEvent.layout.width || 100;
                 this.maxSizes.height = event.nativeEvent.layout.height || 100;
-                if (this.props.aspect.length === 1 && !this.props.metrics && this.props.aspect[0].length === 1) {
+                if (this.props.aspect.length > 0 && !this.props.metrics && this.props.aspect[0].length === 1) {
                   this.setFullSizeMetrics(event.nativeEvent);
                 } else {
                   this.setMetricsOfSquareCrop(event.nativeEvent.layout.width, event.nativeEvent.layout.height);
