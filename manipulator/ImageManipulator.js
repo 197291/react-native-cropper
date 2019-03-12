@@ -8,7 +8,6 @@ import PropTypes from 'prop-types';
 import AutoHeightImage from 'react-native-auto-height-image';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import uuid from 'uuid';
 import HybridTouch from '../HybridTouch';
 // eslint-enable-next-line import/no-extraneous-dependencies
 
@@ -20,11 +19,6 @@ const windowWidth = Dimensions.get('window').width;
 const DEFAULT_WIDTH = 200;
 const DEFAULT_HEIGHT = 100;
 
-const FULL_SIZE = {
-  fullSize: true,
-  id: uuid(),
-};
-
 class ImgManipulator extends Component {
   constructor(props) {
     super(props);
@@ -33,7 +27,6 @@ class ImgManipulator extends Component {
 
     this.state = {
       uri: photo.uri,
-      metrics: squareMetrics,
     };
     this.scrollOffset = 0;
 
@@ -69,7 +62,6 @@ class ImgManipulator extends Component {
         this.scrollView.setNativeProps({ scrollEnabled: false });
       },
       onPanResponderMove: (evt, gestureState) => {
-        // console.log('-----onPanResponderMove------', gestureState, this.currentPos, this.currentSize);
         if (!this.isResizing && gestureState.x0 < this.currentPos.left + this.currentSize.width * 0.9) {
           const left = gestureState.moveX - this.currentSize.width / 2;
           const top = gestureState.moveY + this.scrollOffset - this.currentSize.height / 2 - 85;
@@ -162,7 +154,7 @@ class ImgManipulator extends Component {
     const ratioImgHeight = imgHeightZip / photo.height;
     cropWidth = this.currentSize.width * ratioImgWidth;
     cropHeight = this.currentSize.height * ratioImgHeight;
-    // console.log('cropWidth, cropHeight', cropWidth, cropHeight);
+
     return { cropWidth: cropWidth, cropHeight: cropHeight };
   }
 
@@ -205,7 +197,7 @@ class ImgManipulator extends Component {
   onCropImage = () => {
     let imgWidth = 0;
     let imgHeight = 0;
-    // const { photo } = this.props
+
     const { uri } = this.state;
     Image.getSize(uri, (width2, height2) => {
       imgWidth = width2;
@@ -440,7 +432,6 @@ class ImgManipulator extends Component {
               resizeMode="contain"
               width={windowWidth}
               onLayout={(event) => {
-                // console.log('-----AutoHeightImage-----', event);
                 this.maxSizes.width = event.nativeEvent.layout.width || 100;
                 this.maxSizes.height = event.nativeEvent.layout.height || 100;
                 if (this.props.aspect.length > 0 && !this.props.metrics && this.props.aspect[0].length === 1) {
@@ -453,7 +444,6 @@ class ImgManipulator extends Component {
 
             <Animatable.View
               onLayout={(event) => {
-                // console.log('-----event----', event.nativeEvent.layout);
                 this.currentSize.height = event.nativeEvent.layout.height;
                 this.currentSize.width = event.nativeEvent.layout.width;
                 this.currentPos.top = event.nativeEvent.layout.y;
