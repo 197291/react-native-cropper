@@ -273,25 +273,19 @@ class ImgManipulator extends Component {
   handleChangePickerValue = (itemValue, itemIndex) => {
     const { photo } = this.props;
     const choosenAspect = this.props.aspect.find((metric, index) => index === itemValue);
-    console.log('itemValue, choosenAspect', itemValue, choosenAspect);
-    if (choosenAspect.length > 1) {
-      // CHECK if metrics = null
-      this.setCurrentPos(0, 0);
-      this.setCurrentSizes(this.state.metrics.width, this.state.metrics.height);
-      // this.setCurrentPos(this.props.metrics.top, this.props.metrics.left);
-      // this.setCurrentSizes(this.props.metrics.width, this.props.metrics.height);
-      this.setAspect(choosenAspect);
-      const { cropWidth, cropHeight } = this.calculateMetricsOfSquareCrop(this.maxSizes.width, this.maxSizes.height);
 
-      const width = cropWidth;
-      const height = this.calculateNewCropInAccordingToNewAspect(cropWidth);
-      const { topCoord, leftCoord } = this.calculateCurrentPosition(this.maxSizes.width, this.maxSizes.height);
+    if (choosenAspect.length > 1) {
+      this.setCurrentPos(0, 0);
+      this.setAspect(choosenAspect);
+      const { width, height } = getDefaultCrop(this.maxSizes.width, this.maxSizes.height, choosenAspect[0], choosenAspect[1]);
+      this.setCurrentSizes(width, height);
       this.setMinSizes(width, height);
+
       this.setSizesForSquareCrop(
-        width,
-        height,
-        topCoord,
-        leftCoord
+        this.currentSize.width,
+        this.currentSize.height,
+        this.currentPos.top,
+        this.currentPos.left
       );
     } else {
       this.setCurrentPos();
