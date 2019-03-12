@@ -276,8 +276,10 @@ class ImgManipulator extends Component {
     console.log('itemValue, choosenAspect', itemValue, choosenAspect);
     if (choosenAspect.length > 1) {
       // CHECK if metrics = null
-      this.setCurrentPos(this.props.metrics.top, this.props.metrics.left);
-      this.setCurrentSizes(this.props.metrics.width, this.props.metrics.height);
+      this.setCurrentPos(this.state.metrics.top, this.state.metrics.left);
+      this.setCurrentSizes(this.state.metrics.width, this.state.metrics.height);
+      // this.setCurrentPos(this.props.metrics.top, this.props.metrics.left);
+      // this.setCurrentSizes(this.props.metrics.width, this.props.metrics.height);
       this.setAspect(choosenAspect);
       const { cropWidth, cropHeight } = this.calculateMetricsOfSquareCrop(this.maxSizes.width, this.maxSizes.height);
 
