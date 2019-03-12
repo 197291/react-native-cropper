@@ -481,7 +481,6 @@ export default ImgManipulator;
 
 ImgManipulator.defaultProps = {
   onPictureChoosed: (uri) => console.log('URI:', uri),
-  fullSize: false,
   defaultWidth: DEFAULT_WIDTH,
   defaultHeight: DEFAULT_HEIGHT,
   metrics: null,
@@ -504,7 +503,6 @@ ImgManipulator.propTypes = {
   aspect: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
   defaultWidth: PropTypes.number,
   defaultHeight: PropTypes.number,
-  fullSize: PropTypes.bool,
   isVisible: PropTypes.bool.isRequired,
   onPictureChoosed: PropTypes.func,
   photo: PropTypes.shape({
