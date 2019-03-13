@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {
-  PanResponder, Dimensions, Image, ScrollView, Modal, View, Text, SafeAreaView
+  PanResponder, Dimensions, ScrollView, Modal, View, Text, SafeAreaView
 } from 'react-native';
 import { Picker } from 'native-base';
 import * as Animatable from 'react-native-animatable';
@@ -15,6 +15,8 @@ import getDefaultCrop from './utils';
 
 const windowWidth = Dimensions.get('window').width;
 // const windowHeight = Dimensions.get('window').height - 20;
+
+const heightTopBar = 80;
 
 const DEFAULT_WIDTH = 200;
 const DEFAULT_HEIGHT = 100;
@@ -62,14 +64,18 @@ class ImgManipulator extends Component {
         this.scrollView.setNativeProps({ scrollEnabled: false });
       },
       onPanResponderMove: (evt, gestureState) => {
+        // if (this.currentPos.top > this.maxSizes.height - this.currentSize.height && gestureState.moveY > this.maxSizes.height - this.currentSize.height) {
+        //   return;
+        // }
+        // console.log('this.currentPos.top, gestureState.moveY', this.currentPos.top + this.currentSize.height, gestureState.moveY);
         if (!this.isResizing && gestureState.x0 < this.currentPos.left + this.currentSize.width * 0.9) {
           const left = gestureState.moveX - this.currentSize.width / 2;
           const top = gestureState.moveY + this.scrollOffset - this.currentSize.height / 2 - 85;
 
           this.square.transitionTo(
             {
-              left: this.calculateLeftCoordsOfSquare(left),
-              top: this.calculateTopCoordsOfSquare(top), /**  OFFSET */
+              left: this.calculateLeftCoordsOfSquare(left, gestureState),
+              top: this.calculateTopCoordsOfSquare(top, gestureState), /**  OFFSET */
             },
             0,
           );
@@ -294,31 +300,37 @@ class ImgManipulator extends Component {
     });
   }
 
-  calculateLeftCoordsOfSquare(left) {
+  calculateLeftCoordsOfSquare(left, gestureState) {
     let leftSquare = left || 0;
-
     if (this.currentPos.left < 0) {
       leftSquare = 0;
     }
 
-    if (this.currentPos.left > this.maxSizes.width - this.currentSize.width) {
+    if (
+      (this.currentPos.left > this.maxSizes.width - this.currentSize.width)
+      && (gestureState.moveX > this.maxSizes.width - this.currentSize.width)
+    ) {
       leftSquare = this.maxSizes.width - this.currentSize.width;
     }
 
     return leftSquare;
   }
 
-  calculateTopCoordsOfSquare(top) {
+  calculateTopCoordsOfSquare(top, gestureState) {
     let topSquare = top || 0;
-
+    const moveY = gestureState.moveY - heightTopBar;
     if (this.currentPos.top < 0) {
       topSquare = 0;
     }
 
-    if (this.currentPos.top > this.maxSizes.height - this.currentSize.height) {
+    if (
+      (this.currentPos.top > this.maxSizes.height - this.currentSize.height)
+      && (moveY > this.maxSizes.height - this.currentSize.height)
+    ) {
       topSquare = this.maxSizes.height - this.currentSize.height;
+      // console.log('this.maxSizes.height, this.currentSize.height', this.maxSizes.height, this.currentSize.height);
     }
-
+    // console.log('gestureState.moveY, SIZE CROP', gestureState.moveY, this.maxSizes.height - this.currentSize.height);
     return topSquare;
   }
 
@@ -379,7 +391,7 @@ class ImgManipulator extends Component {
       >
         <SafeAreaView
           style={{
-            width: windowWidth, backgroundColor: 'black', flexDirection: 'row', justifyContent: 'space-between',
+            width: windowWidth, backgroundColor: 'black', flexDirection: 'row', justifyContent: 'space-between', height: heightTopBar
           }}
         >
           {this.renderButton('', this.onToggleModal, 'arrow-left')}
@@ -413,10 +425,10 @@ class ImgManipulator extends Component {
         <View style={{ flex: 1, backgroundColor: 'black' }}>
           <ScrollView
             style={{ position: 'relative', flex: 1 }}
-            maximumZoomScale={3}
-            minimumZoomScale={0.5}
-            onScroll={this.onHandleScroll}
-            bounces={false}
+            maximumZoomScale={1}
+            minimumZoomScale={1}
+            // onScroll={this.onHandleScroll}
+            // bounces={false}
             ref={(item) => {
               this.scrollView = item;
             }}
