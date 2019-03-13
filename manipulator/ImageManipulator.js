@@ -199,47 +199,59 @@ class ImgManipulator extends Component {
     }
   }
 
+  get cropInViewArea() {
+    const lessThanRightEdge = this.currentPos.left <= this.maxSizes.width - this.currentSize.width;
+    const moreThanLeftEdge = this.currentPos.left >= 0;
+    const lessThanBottomEdge = this.currentPos.top <= this.maxSizes.height - this.currentSize.height;
+    const moreThanTopEdge = this.currentPos.top >= 0;
+    return lessThanRightEdge && moreThanLeftEdge && lessThanBottomEdge && moreThanTopEdge;
+  }
+
   onCropImage = () => {
-    const imgWidth = this.props.photo.width;
-    const imgHeight = this.props.photo.height;
+    if (this.cropInViewArea) {
+      const imgWidth = this.props.photo.width;
+      const imgHeight = this.props.photo.height;
 
-    const heightRatio = this.currentSize.height / this.maxSizes.height;
-    const offsetHeightRatio = this.currentPos.top / this.maxSizes.height;
+      const heightRatio = this.currentSize.height / this.maxSizes.height;
+      const offsetHeightRatio = this.currentPos.top / this.maxSizes.height;
 
-    const isOutOfBoundsY = imgHeight < (imgHeight * heightRatio) + imgHeight * offsetHeightRatio;
-    const offsetMaxHeight = (imgHeight * heightRatio + imgHeight * offsetHeightRatio) - imgHeight;
+      const isOutOfBoundsY = imgHeight < (imgHeight * heightRatio) + imgHeight * offsetHeightRatio;
+      const offsetMaxHeight = (imgHeight * heightRatio + imgHeight * offsetHeightRatio) - imgHeight;
 
-    const isOutOfBoundsX = imgWidth < (this.currentPos.left * imgWidth / windowWidth) + (this.currentSize.width * imgWidth / windowWidth);
-    const offsetMaxWidth = (this.currentPos.left * imgWidth / windowWidth) + (this.currentSize.width * imgWidth / windowWidth) - imgWidth;
+      const isOutOfBoundsX = imgWidth < (this.currentPos.left * imgWidth / windowWidth) + (this.currentSize.width * imgWidth / windowWidth);
+      const offsetMaxWidth = (this.currentPos.left * imgWidth / windowWidth) + (this.currentSize.width * imgWidth / windowWidth) - imgWidth;
 
-    const isOutOfBoundsLeft = (this.currentPos.left * imgWidth / windowWidth) < 0;
-    const isOutOfBoundsTop = (imgHeight * offsetHeightRatio) < 0;
+      const isOutOfBoundsLeft = (this.currentPos.left * imgWidth / windowWidth) < 0;
+      const isOutOfBoundsTop = (imgHeight * offsetHeightRatio) < 0;
 
-    const originX = isOutOfBoundsLeft ? 0 : this.currentPos.left * imgWidth / windowWidth;
-    const originY = isOutOfBoundsTop ? 0 : imgHeight * offsetHeightRatio;
-    let cropWidth = this.currentSize.width * imgWidth / windowWidth;
-    let cropHeight = imgHeight * heightRatio;
+      const originX = isOutOfBoundsLeft ? 0 : this.currentPos.left * imgWidth / windowWidth;
+      const originY = isOutOfBoundsTop ? 0 : imgHeight * offsetHeightRatio;
+      let cropWidth = this.currentSize.width * imgWidth / windowWidth;
+      let cropHeight = imgHeight * heightRatio;
 
-    if (isOutOfBoundsX) {
-      cropWidth = cropWidth - offsetMaxWidth;
+      if (isOutOfBoundsX) {
+        cropWidth = cropWidth - offsetMaxWidth;
+      }
+      if (isOutOfBoundsY) {
+        cropHeight = cropHeight - offsetMaxHeight;
+      }
+      if (isOutOfBoundsLeft) {
+        cropWidth = cropWidth + this.currentPos.left * imgWidth / windowWidth;
+      }
+      if (isOutOfBoundsTop) {
+        cropHeight = cropHeight + imgHeight * offsetHeightRatio;
+      }
+
+      const cropObj = {
+        originX: Math.round(originX),
+        originY: Math.round(originY),
+        width: Math.round(cropWidth),
+        height: Math.round(cropHeight),
+      };
+      console.log('cropObj', cropObj);
+    } else {
+      this.setSizesForSquareCrop();
     }
-    if (isOutOfBoundsY) {
-      cropHeight = cropHeight - offsetMaxHeight;
-    }
-    if (isOutOfBoundsLeft) {
-      cropWidth = cropWidth + this.currentPos.left * imgWidth / windowWidth;
-    }
-    if (isOutOfBoundsTop) {
-      cropHeight = cropHeight + imgHeight * offsetHeightRatio;
-    }
-
-    const cropObj = {
-      originX: Math.round(originX),
-      originY: Math.round(originY),
-      width: Math.round(cropWidth),
-      height: Math.round(cropHeight),
-    };
-    console.log('cropObj', cropObj);
   }
 
   onHandleScroll = (event) => {
@@ -346,7 +358,7 @@ class ImgManipulator extends Component {
     );
   }
 
-  setSizesForSquareCrop(width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT, top = 0, left = 0) {
+  setSizesForSquareCrop(width = this.currentSize.width, height = this.currentSize.height, top = 0, left = 0) {
     if (this.square) {
       this.square.transitionTo(
         { width: width,
@@ -450,10 +462,10 @@ class ImgManipulator extends Component {
 
             <Animatable.View
               onLayout={(event) => {
-                this.currentSize.height = event.nativeEvent.layout.height;
-                this.currentSize.width = event.nativeEvent.layout.width;
-                this.currentPos.top = event.nativeEvent.layout.y;
-                this.currentPos.left = event.nativeEvent.layout.x;
+                this.currentSize.height = Math.round(event.nativeEvent.layout.height);
+                this.currentSize.width = Math.round(event.nativeEvent.layout.width);
+                this.currentPos.top = Math.round(event.nativeEvent.layout.y);
+                this.currentPos.left = Math.round(event.nativeEvent.layout.x);
               }}
               ref={(ref) => {
                 this.square = ref;
