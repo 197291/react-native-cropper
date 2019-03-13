@@ -61,7 +61,7 @@ class ImgManipulator extends Component {
       onMoveShouldSetPanResponderCapture: () => true,
 
       onPanResponderGrant: () => {
-        this.scrollView.setNativeProps({ scrollEnabled: false });
+        // this.scrollView.setNativeProps({ scrollEnabled: false });
       },
       onPanResponderMove: (evt, gestureState) => {
         // if (this.currentPos.top > this.maxSizes.height - this.currentSize.height && gestureState.moveY > this.maxSizes.height - this.currentSize.height) {
@@ -79,6 +79,9 @@ class ImgManipulator extends Component {
             },
             0,
           );
+          // console.log('this.square', this.square);
+          // this.square.style.left = this.calculateLeftCoordsOfSquare(left, gestureState);
+          // this.square.style.top = this.calculateTopCoordsOfSquare(top, gestureState);
         } else {
           this.isResizing = true;
           let aspect = null;
@@ -103,7 +106,7 @@ class ImgManipulator extends Component {
       },
       onPanResponderTerminationRequest: () => true,
       onPanResponderRelease: () => {
-        this.scrollView.setNativeProps({ scrollEnabled: true });
+        // this.scrollView.setNativeProps({ scrollEnabled: true });
         this.isResizing = false;
         // The user has released all touches while this view is the
         // responder. This typically means a gesture has succeeded
@@ -302,7 +305,7 @@ class ImgManipulator extends Component {
 
   calculateLeftCoordsOfSquare(left, gestureState) {
     let leftSquare = left || 0;
-    if (this.currentPos.left < 0) {
+    if (this.currentPos.left < 0 && gestureState.moveX < 0 + this.currentSize.width) {
       leftSquare = 0;
     }
 
@@ -319,7 +322,7 @@ class ImgManipulator extends Component {
   calculateTopCoordsOfSquare(top, gestureState) {
     let topSquare = top || 0;
     const moveY = gestureState.moveY - heightTopBar;
-    if (this.currentPos.top < 0) {
+    if (this.currentPos.top < 0 && moveY < 0 + this.currentSize.height) {
       topSquare = 0;
     }
 
@@ -328,9 +331,7 @@ class ImgManipulator extends Component {
       && (moveY > this.maxSizes.height - this.currentSize.height)
     ) {
       topSquare = this.maxSizes.height - this.currentSize.height;
-      // console.log('this.maxSizes.height, this.currentSize.height', this.maxSizes.height, this.currentSize.height);
     }
-    // console.log('gestureState.moveY, SIZE CROP', gestureState.moveY, this.maxSizes.height - this.currentSize.height);
     return topSquare;
   }
 
@@ -423,15 +424,15 @@ class ImgManipulator extends Component {
           </View>
         </SafeAreaView>
         <View style={{ flex: 1, backgroundColor: 'black' }}>
-          <ScrollView
+          <View
             style={{ position: 'relative', flex: 1 }}
-            maximumZoomScale={1}
-            minimumZoomScale={1}
+            // maximumZoomScale={1}
+            // minimumZoomScale={1}
             // onScroll={this.onHandleScroll}
             // bounces={false}
-            ref={(item) => {
-              this.scrollView = item;
-            }}
+            // ref={(item) => {
+            //   this.scrollView = item;
+            // }}
           >
             <AutoHeightImage
               style={{ backgroundColor: 'black' }}
@@ -476,7 +477,7 @@ class ImgManipulator extends Component {
                 backgroundColor: 'rgba(0,0,0,0.5)',
               }}
             />
-          </ScrollView>
+          </View>
         </View>
       </Modal>
     );
