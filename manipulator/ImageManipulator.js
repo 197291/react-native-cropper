@@ -48,8 +48,11 @@ class ImgManipulator extends Component {
       height: null,
     };
 
-    this.minHeight = squareMetrics.height;
-    this.minWidth = squareMetrics.width;
+    this.minHeight = 10;
+    this.minWidth = 10;
+
+    // this.minHeight = squareMetrics.height;
+    // this.minWidth = squareMetrics.width;
 
     this.isResizing = false;
 
@@ -61,13 +64,9 @@ class ImgManipulator extends Component {
       onMoveShouldSetPanResponderCapture: () => true,
 
       onPanResponderGrant: () => {
-        // this.scrollView.setNativeProps({ scrollEnabled: false });
+        this.scrollView.setNativeProps({ scrollEnabled: false });
       },
       onPanResponderMove: (evt, gestureState) => {
-        // if (this.currentPos.top > this.maxSizes.height - this.currentSize.height && gestureState.moveY > this.maxSizes.height - this.currentSize.height) {
-        //   return;
-        // }
-        // console.log('this.currentPos.top, gestureState.moveY', this.currentPos.top + this.currentSize.height, gestureState.moveY);
         if (!this.isResizing && gestureState.x0 < this.currentPos.left + this.currentSize.width * 0.9) {
           const left = gestureState.moveX - this.currentSize.width / 2;
           const top = gestureState.moveY + this.scrollOffset - this.currentSize.height / 2 - 85;
@@ -79,9 +78,6 @@ class ImgManipulator extends Component {
             },
             0,
           );
-          // console.log('this.square', this.square);
-          // this.square.style.left = this.calculateLeftCoordsOfSquare(left, gestureState);
-          // this.square.style.top = this.calculateTopCoordsOfSquare(top, gestureState);
         } else {
           this.isResizing = true;
           let aspect = null;
@@ -106,7 +102,7 @@ class ImgManipulator extends Component {
       },
       onPanResponderTerminationRequest: () => true,
       onPanResponderRelease: () => {
-        // this.scrollView.setNativeProps({ scrollEnabled: true });
+        this.scrollView.setNativeProps({ scrollEnabled: true });
         this.isResizing = false;
         // The user has released all touches while this view is the
         // responder. This typically means a gesture has succeeded
@@ -182,7 +178,7 @@ class ImgManipulator extends Component {
     if (this.currentSize && imgWidthZip && imgHeightZip) {
       const { cropWidth, cropHeight } = this.calculateMetricsOfSquareCrop(imgWidthZip, imgHeightZip);
       this.setCurrentSizes(cropWidth, cropHeight);
-      this.setMinSizes(cropWidth, cropHeight);
+      // this.setMinSizes(cropWidth, cropHeight);
       let top = this.currentPos.top;
       let left = this.currentPos.left;
 
@@ -275,7 +271,7 @@ class ImgManipulator extends Component {
       this.setAspect(choosenAspect);
       const { width, height } = getDefaultCrop(this.maxSizes.width, this.maxSizes.height, choosenAspect[0], choosenAspect[1]);
       this.setCurrentSizes(width, height);
-      this.setMinSizes(width, height);
+      // this.setMinSizes(width, height);
 
       this.setSizesForSquareCrop(
         this.currentSize.width,
@@ -424,15 +420,15 @@ class ImgManipulator extends Component {
           </View>
         </SafeAreaView>
         <View style={{ flex: 1, backgroundColor: 'black' }}>
-          <View
+          <ScrollView
             style={{ position: 'relative', flex: 1 }}
-            // maximumZoomScale={1}
-            // minimumZoomScale={1}
-            // onScroll={this.onHandleScroll}
-            // bounces={false}
-            // ref={(item) => {
-            //   this.scrollView = item;
-            // }}
+            maximumZoomScale={1}
+            minimumZoomScale={1}
+            onScroll={this.onHandleScroll}
+            bounces={false}
+            ref={(item) => {
+              this.scrollView = item;
+            }}
           >
             <AutoHeightImage
               style={{ backgroundColor: 'black' }}
@@ -477,7 +473,7 @@ class ImgManipulator extends Component {
                 backgroundColor: 'rgba(0,0,0,0.5)',
               }}
             />
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     );
