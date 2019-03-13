@@ -16,7 +16,7 @@ import getDefaultCrop from './utils';
 const windowWidth = Dimensions.get('window').width;
 // const windowHeight = Dimensions.get('window').height - 20;
 
-const heightTopBar = 100;
+const heightTopBar = 80;
 
 const DEFAULT_WIDTH = 200;
 const DEFAULT_HEIGHT = 100;
@@ -398,9 +398,10 @@ class ImgManipulator extends Component {
               justifyContent: 'flex-start',
               flexDirection: 'row',
               alignItems: 'center',
+              alignContent: 'center',
+              alignSelf: 'center'
             }}
           >
-            {this.renderButton('', this.onCropImage, 'check')}
             {this.props.aspect.length > 1 && <Icon size={20} name="menu-down" color="white" /> }
             {this.props.aspect.length > 1 && (
               <Picker
@@ -409,7 +410,7 @@ class ImgManipulator extends Component {
                 itemTextStyle={{ color: 'black' }}
                 headerTitleStyle={{ color: 'black' }}
                 selectedValue={this.state.selectedAspect}
-                style={{ height: 50, width: 'auto' }}
+                style={{ height: 50, width: 'auto', alignSelf: 'center' }}
                 onValueChange={this.handleChangePickerValue}
                 placeholder={translation.placeholderPicker}
                 placeholderStyle={{ color: 'white' }}
@@ -418,6 +419,7 @@ class ImgManipulator extends Component {
               </Picker>
             )}
           </View>
+          {this.renderButton('', this.onCropImage, 'check')}
         </SafeAreaView>
         <View style={{ flex: 1, backgroundColor: 'black' }}>
           <ScrollView
