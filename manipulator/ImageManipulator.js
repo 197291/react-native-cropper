@@ -16,7 +16,7 @@ import getDefaultCrop from './utils';
 const windowWidth = Dimensions.get('window').width;
 // const windowHeight = Dimensions.get('window').height - 20;
 
-const heightTopBar = 80;
+const heightTopBar = 100;
 
 const DEFAULT_WIDTH = 200;
 const DEFAULT_HEIGHT = 100;
