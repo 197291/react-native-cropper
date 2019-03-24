@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {
-  PanResponder, Dimensions, ScrollView, Modal, View, Text, SafeAreaView
+  PanResponder, Dimensions, ScrollView, Modal, View, Text, SafeAreaView, Platform
 } from 'react-native';
 import { Picker } from 'native-base';
 import * as Animatable from 'react-native-animatable';
@@ -8,9 +8,9 @@ import PropTypes from 'prop-types';
 import AutoHeightImage from 'react-native-auto-height-image';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import RNPickerSelect from 'react-native-picker-select';
 import HybridTouch from '../HybridTouch';
 // eslint-enable-next-line import/no-extraneous-dependencies
-
 import getDefaultCrop from './utils';
 
 const windowWidth = Dimensions.get('window').width;
@@ -26,9 +26,10 @@ class ImgManipulator extends Component {
     super(props);
     const { photo, aspect, metrics } = this.props;
     const squareMetrics = this.getDefaultSquareMetrics(metrics);
-
     this.state = {
       uri: photo.uri,
+      selectedAspect: null,
+      androidItems: this.prepareItems(aspect),
     };
     this.scrollOffset = 0;
 
@@ -278,24 +279,26 @@ class ImgManipulator extends Component {
     const { photo } = this.props;
     const choosenAspect = this.props.aspect.find((metric, index) => index === itemValue);
 
-    if (choosenAspect.length > 1) {
-      this.setCurrentPos(0, 0);
-      this.setAspect(choosenAspect);
-      const { width, height } = getDefaultCrop(this.maxSizes.width, this.maxSizes.height, choosenAspect[0], choosenAspect[1]);
-      this.setCurrentSizes(width, height);
-      // this.setMinSizes(width, height);
+    if (itemValue !== null) {
+      if (choosenAspect.length > 1) {
+        this.setCurrentPos(0, 0);
+        this.setAspect(choosenAspect);
+        const { width, height } = getDefaultCrop(this.maxSizes.width, this.maxSizes.height, choosenAspect[0], choosenAspect[1]);
+        this.setCurrentSizes(width, height);
+        // this.setMinSizes(width, height);
 
-      this.setSizesForSquareCrop(
-        this.currentSize.width,
-        this.currentSize.height,
-        this.currentPos.top,
-        this.currentPos.left
-      );
-    } else {
-      this.setCurrentPos();
-      this.setCurrentSizes(this.maxSizes.width, this.maxSizes.height);
-      this.aspect = [ photo.width, photo.height ];
-      this.setSizesForSquareCrop(this.maxSizes.width, this.maxSizes.height);
+        this.setSizesForSquareCrop(
+          this.currentSize.width,
+          this.currentSize.height,
+          this.currentPos.top,
+          this.currentPos.left
+        );
+      } else {
+        this.setCurrentPos();
+        this.setCurrentSizes(this.maxSizes.width, this.maxSizes.height);
+        this.aspect = [ photo.width, photo.height ];
+        this.setSizesForSquareCrop(this.maxSizes.width, this.maxSizes.height);
+      }
     }
 
     this.setState({ selectedAspect: itemValue });
@@ -377,8 +380,65 @@ class ImgManipulator extends Component {
     this.forceUpdate();
   }
 
+  prepareItems = () => {
+    return this.props.aspect.map((itm, index) => ({ label: this.getLabelAspect(itm), value: index }));
+  }
+
+  calcWidth(percent) {
+    return Math.round(percent * windowWidth / 100);
+  }
+
+  createPicker() {
+    const { aspect, translation } = this.props;
+
+    const placeholder = {
+      label: translation.placeholderPicker,
+      value: null,
+      color: 'black',
+    };
+
+    return aspect.length > 1 && (
+      Platform.OS === 'android' ? (
+        <RNPickerSelect
+          placeholder={placeholder}
+          items={this.state.androidItems}
+          value={this.state.selectedAspect}
+          onValueChange={this.handleChangePickerValue}
+          useNativeAndroidPickerStyle={false}
+          style={{
+            inputAndroid: {
+              color: 'white'
+            },
+            inputAndroidContainer: {
+              minWidth: 100
+            }
+          }}
+        />
+      )
+        : (
+          <Picker
+            mode="dropdown"
+            textStyle={{ color: 'white' }}
+            itemTextStyle={{ color: 'black' }}
+            headerTitleStyle={{ color: 'black' }}
+            selectedValue={this.state.selectedAspect}
+            style={{
+              height: 50,
+              width: this.calcWidth(53),
+              alignSelf: 'center',
+            }}
+            onValueChange={this.handleChangePickerValue}
+            placeholder={translation.placeholderPicker}
+            placeholderStyle={{ color: 'white' }}
+          >
+            {this.renderPickerOptions()}
+          </Picker>
+        )
+    );
+  }
+
   render() {
-    const { isVisible, translation } = this.props;
+    const { isVisible } = this.props;
     const { uri } = this.state;
 
     if (!uri) {
@@ -387,6 +447,8 @@ class ImgManipulator extends Component {
 
     const { width, height } = this.currentSize;
     const { top, left } = this.currentPos;
+    const Picker = this.createPicker();
+
     return (
       <Modal
         animationType="slide"
@@ -400,7 +462,7 @@ class ImgManipulator extends Component {
       >
         <SafeAreaView
           style={{
-            width: windowWidth, backgroundColor: 'black', flexDirection: 'row', justifyContent: 'space-between', height: heightTopBar
+            width: windowWidth, backgroundColor: 'black', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 90
           }}
         >
           {this.renderButton('', this.onToggleModal, 'arrow-left')}
@@ -411,25 +473,10 @@ class ImgManipulator extends Component {
               flexDirection: 'row',
               alignItems: 'center',
               alignContent: 'center',
-              alignSelf: 'center'
             }}
           >
             {this.props.aspect.length > 1 && <Icon size={20} name="menu-down" color="white" /> }
-            {this.props.aspect.length > 1 && (
-              <Picker
-                mode="dropdown"
-                textStyle={{ color: 'white' }}
-                itemTextStyle={{ color: 'black' }}
-                headerTitleStyle={{ color: 'black' }}
-                selectedValue={this.state.selectedAspect}
-                style={{ height: 50, width: 'auto', alignSelf: 'center' }}
-                onValueChange={this.handleChangePickerValue}
-                placeholder={translation.placeholderPicker}
-                placeholderStyle={{ color: 'white' }}
-              >
-                {this.renderPickerOptions()}
-              </Picker>
-            )}
+            {Picker}
           </View>
           {this.renderButton('', this.onCropImage, 'check')}
         </SafeAreaView>
