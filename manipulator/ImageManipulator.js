@@ -70,14 +70,19 @@ class ImgManipulator extends Component {
         this.scrollView.setNativeProps({ scrollEnabled: false });
       },
       onPanResponderMove: (evt, gestureState) => {
-        if (!this.isResizing && gestureState.x0 < this.currentPos.left + this.currentSize.width * 0.9) {
-          const left = gestureState.moveX - this.currentSize.width / 2;
-          const top = gestureState.moveY + this.scrollOffset - this.currentSize.height / 2 - 85;
+        const { moveX, moveY, x0, y0 } = gestureState;
+        const moveXRound = Math.round(moveX);
+        const moveYRound = Math.round(moveY);
+        const x0Round = Math.round(x0);
 
-          this.square.transitionTo(
+        if (!this.isResizing && x0Round < this.currentPos.left + this.currentSize.width * 0.9) {
+          const left = moveXRound - this.currentSize.width / 2;
+          const top = moveYRound + this.scrollOffset - this.currentSize.height / 2 - 85;
+
+          this.square.setNativeProps(
             {
-              left: this.calculateLeftCoordsOfSquare(left, gestureState),
-              top: this.calculateTopCoordsOfSquare(top, gestureState), /**  OFFSET */
+              left: this.calculateLeftCoordsOfSquare(left, moveXRound),
+              top: this.calculateTopCoordsOfSquare(top, moveYRound), /**  OFFSET */
             },
             0,
           );
@@ -87,8 +92,8 @@ class ImgManipulator extends Component {
         } else {
           this.isResizing = true;
           let aspect = null;
-          const squareWidth = gestureState.moveX - this.currentPos.left;
-          let squareHeight = gestureState.moveY - this.currentPos.top + this.scrollOffset - 45; /** OFFSET */
+          const squareWidth = moveXRound - this.currentPos.left;
+          let squareHeight = moveYRound - this.currentPos.top + this.scrollOffset - 45; /** OFFSET */
 
           if (this.isValidAspect()) {
             aspect = this.aspect[0] / this.aspect[1];
@@ -98,7 +103,7 @@ class ImgManipulator extends Component {
           const baseWidth = this.minWidth || DEFAULT_WIDTH;
           const baseHeight = this.minHeight || DEFAULT_HEIGHT;
 
-          this.square.transitionTo(
+          this.square.setNativeProps(
             { width: squareWidth < baseWidth ? baseWidth : squareWidth,
               height: squareHeight < baseHeight ? baseHeight : squareHeight
             },
@@ -127,7 +132,6 @@ class ImgManipulator extends Component {
       transform: [{translateY: top * -1}, {translateX: left * -1}]
     });
   }
-
 
   getDefaultSquareMetrics(metrics) {
     let metricsDefault = {
@@ -324,15 +328,18 @@ class ImgManipulator extends Component {
     });
   }
 
-  calculateLeftCoordsOfSquare(left, gestureState) {
+  calculateLeftCoordsOfSquare(left, moveX) {
     let leftSquare = left || 0;
-    if (this.currentPos.left < 0 && gestureState.moveX < 0 + this.currentSize.width) {
+
+    if (this.currentPos.left < 0 
+      || moveX < 0 + this.currentSize.width * 0.5
+      ) {
       leftSquare = 0;
     }
 
     if (
       (this.currentPos.left > this.maxSizes.width - this.currentSize.width)
-      && (gestureState.moveX > this.maxSizes.width - this.currentSize.width)
+      || (moveX > this.maxSizes.width - this.currentSize.width * 0.5)
     ) {
       leftSquare = this.maxSizes.width - this.currentSize.width;
     }
@@ -340,16 +347,19 @@ class ImgManipulator extends Component {
     return leftSquare;
   }
 
-  calculateTopCoordsOfSquare(top, gestureState) {
+  calculateTopCoordsOfSquare(top, moveY) {
     let topSquare = top || 0;
-    const moveY = gestureState.moveY - heightTopBar;
-    if (this.currentPos.top < 0 && moveY < 0 + this.currentSize.height) {
+    const moveYCustom = moveY - heightTopBar;
+    if (
+      this.currentPos.top < 0 
+      || moveYCustom < 0 + this.currentSize.height * 0.6
+    ) {
       topSquare = 0;
     }
 
     if (
       (this.currentPos.top > this.maxSizes.height - this.currentSize.height)
-      && (moveY > this.maxSizes.height - this.currentSize.height)
+      || (moveYCustom > this.maxSizes.height - this.currentSize.height * 0.6)
     ) {
       topSquare = this.maxSizes.height - this.currentSize.height;
     }
@@ -373,7 +383,7 @@ class ImgManipulator extends Component {
 
   setSizesForSquareCrop(width = this.currentSize.width, height = this.currentSize.height, top = 0, left = 0) {
     if (this.square) {
-      this.square.transitionTo(
+      this.square.setNativeProps(
         { width: width,
           height: height,
           top: top,
@@ -541,11 +551,11 @@ class ImgManipulator extends Component {
                   left: 0,
                   width: this.maxSizes.width,
                   height: this.maxSizes.height,
-                  backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)'
                 }}
               />
               {this.state.isShow && (
-                <Animatable.View
+                <View
                   onLayout={(event) => {
                     this.currentSize.height = Math.round(event.nativeEvent.layout.height);
                     this.currentSize.width = Math.round(event.nativeEvent.layout.width);
@@ -582,10 +592,10 @@ class ImgManipulator extends Component {
                   style={{
                     width: windowWidth,
                     height: this.maxSizes.height,
-                    transform: [{translateY: this.currentPos.top * -1}, {translateX: this.currentPos.left * -1}]
+                    transform: [{translateY: this.currentPos.top * -1}, {translateX: this.currentPos.left * -1}],
                   }}
                  /> 
-                </Animatable.View>
+                </View>
               )}
             </View>
 
