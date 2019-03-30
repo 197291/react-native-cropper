@@ -30,6 +30,7 @@ class ImgManipulator extends Component {
       uri: photo.uri,
       selectedAspect: null,
       androidItems: this.prepareItems(aspect),
+      isShow: false
     };
     this.scrollOffset = 0;
 
@@ -437,6 +438,12 @@ class ImgManipulator extends Component {
     );
   }
 
+  showCropper = () => {
+    this.setState({
+      isShow: true
+    });
+  }
+
   render() {
     const { isVisible } = this.props;
     const { uri } = this.state;
@@ -462,7 +469,12 @@ class ImgManipulator extends Component {
       >
         <SafeAreaView
           style={{
-            width: windowWidth, backgroundColor: 'black', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 90
+            width: windowWidth,
+            backgroundColor: 'black',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 90
           }}
         >
           {this.renderButton('', this.onToggleModal, 'arrow-left')}
@@ -491,49 +503,66 @@ class ImgManipulator extends Component {
               this.scrollView = item;
             }}
           >
-            <AutoHeightImage
-              style={{ backgroundColor: 'black' }}
-              source={{ uri: uri }}
-              resizeMode="contain"
-              width={windowWidth}
-              onLayout={(event) => {
-                this.maxSizes.width = event.nativeEvent.layout.width || 100;
-                this.maxSizes.height = event.nativeEvent.layout.height || 100;
-                if (this.props.aspect.length > 0 && !this.props.metrics && this.props.aspect[0].length === 1) {
-                  this.setFullSizeMetrics(event.nativeEvent);
-                } else {
-                  this.setMetricsOfSquareCrop(event.nativeEvent.layout.width, event.nativeEvent.layout.height);
-                }
-              }}
-            />
+            <View style={{ position: 'relative' }}>
+              <AutoHeightImage
+                style={{ position: 'relative', backgroundColor: 'black' }}
+                source={{ uri: uri }}
+                resizeMode="contain"
+                width={windowWidth}
+                onLoad={this.showCropper}
+                onLayout={(event) => {
+                  this.maxSizes.width = event.nativeEvent.layout.width || 100;
+                  this.maxSizes.height = event.nativeEvent.layout.height || 100;
+                  if (this.props.aspect.length > 0 && !this.props.metrics && this.props.aspect[0].length === 1) {
+                    this.setFullSizeMetrics(event.nativeEvent);
+                  } else {
+                    this.setMetricsOfSquareCrop(event.nativeEvent.layout.width, event.nativeEvent.layout.height);
+                  }
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  // width: 200,
+                  // height: 200,
+                  width: this.maxSizes.width,
+                  height: this.maxSizes.height,
+                }}
+              />
+              {this.state.isShow && (
+                <Animatable.View
+                  onLayout={(event) => {
+                    this.currentSize.height = Math.round(event.nativeEvent.layout.height);
+                    this.currentSize.width = Math.round(event.nativeEvent.layout.width);
+                    this.currentPos.top = Math.round(event.nativeEvent.layout.y);
+                    this.currentPos.left = Math.round(event.nativeEvent.layout.x);
+                  }}
+                  ref={(ref) => {
+                    this.square = ref;
+                  }}
+                  {...this._panResponder.panHandlers}
+                  style={{
+                    borderRadius: 5,
+                    borderWidth: 3,
+                    borderColor: 'yellow',
+                    flex: 1,
+                    minHeight: this.minHeight,
+                    width: width,
+                    height: height,
+                    position: 'absolute',
+                    maxHeight: this.maxSizes.height,
+                    top: top || 0,
+                    left: left || 0,
+                    zIndex: 5,
+                    maxWidth: this.maxSizes.width,
+                    backgroundColor: 'opacity',
+                  }}
+                />
+              )}
+            </View>
 
-            <Animatable.View
-              onLayout={(event) => {
-                this.currentSize.height = Math.round(event.nativeEvent.layout.height);
-                this.currentSize.width = Math.round(event.nativeEvent.layout.width);
-                this.currentPos.top = Math.round(event.nativeEvent.layout.y);
-                this.currentPos.left = Math.round(event.nativeEvent.layout.x);
-              }}
-              ref={(ref) => {
-                this.square = ref;
-              }}
-              {...this._panResponder.panHandlers}
-              style={{
-                borderRadius: 5,
-                borderWidth: 3,
-                borderColor: 'yellow',
-                flex: 1,
-                minHeight: this.minHeight,
-                width: width,
-                height: height,
-                position: 'absolute',
-                maxHeight: this.maxSizes.height,
-                top: top || 0,
-                left: left || 0,
-                maxWidth: this.maxSizes.width,
-                backgroundColor: 'rgba(0,0,0,0.5)',
-              }}
-            />
           </ScrollView>
         </View>
       </Modal>
