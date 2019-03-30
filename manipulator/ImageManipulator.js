@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {
-  PanResponder, Dimensions, ScrollView, Modal, View, Text, SafeAreaView, Platform
+  PanResponder, Dimensions, ScrollView, Modal, View, Text, SafeAreaView, Platform, Image
 } from 'react-native';
 import { Picker } from 'native-base';
 import * as Animatable from 'react-native-animatable';
@@ -32,6 +32,10 @@ class ImgManipulator extends Component {
       androidItems: this.prepareItems(aspect),
       isShow: false
     };
+    // refs crop and image inside of crop square
+    this.brightImage = null;
+    this.square = null;
+
     this.scrollOffset = 0;
 
     this.currentPos = {
@@ -80,6 +84,9 @@ class ImgManipulator extends Component {
             },
             0,
           );
+
+          this.setPositionForBrightImage(this.currentPos.top, this.currentPos.left);
+          
         } else {
           this.isResizing = true;
           let aspect = null;
@@ -115,6 +122,12 @@ class ImgManipulator extends Component {
       },
       onShouldBlockNativeResponder: () => true
       ,
+    });
+  }
+
+  setPositionForBrightImage(top, left) {
+    this.brightImage.setNativeProps({
+      transform: [{translateY: top * -1}, {translateX: left * -1}]
     });
   }
 
@@ -506,7 +519,12 @@ class ImgManipulator extends Component {
             <View style={{ position: 'relative' }}>
               <AutoHeightImage
                 style={{ position: 'relative', backgroundColor: 'black' }}
-                source={{ uri: uri }}
+                source={{ 
+                  uri: uri,
+                  headers: {
+                    'cache-control': 'public'
+                  }
+                }}
                 resizeMode="contain"
                 width={windowWidth}
                 onLoad={this.showCropper}
@@ -529,6 +547,7 @@ class ImgManipulator extends Component {
                   // height: 200,
                   width: this.maxSizes.width,
                   height: this.maxSizes.height,
+                  backgroundColor: 'rgba(0, 0, 0, 0.2)'
                 }}
               />
               {this.state.isShow && (
@@ -544,6 +563,7 @@ class ImgManipulator extends Component {
                   }}
                   {...this._panResponder.panHandlers}
                   style={{
+                    overflow: 'hidden',
                     borderRadius: 5,
                     borderWidth: 3,
                     borderColor: 'yellow',
@@ -559,7 +579,19 @@ class ImgManipulator extends Component {
                     maxWidth: this.maxSizes.width,
                     backgroundColor: 'opacity',
                   }}
-                />
+                >
+                <Image
+                  source={{ uri: uri }}
+                  ref={(ref) => {
+                    this.brightImage = ref;
+                  }}
+                  style={{
+                    width: windowWidth,
+                    height: this.maxSizes.height,
+                    transform: [{translateY: this.currentPos.top * -1}, {translateX: this.currentPos.left * -1}]
+                  }}
+                 /> 
+                </Animatable.View>
               )}
             </View>
 
