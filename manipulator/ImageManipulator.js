@@ -70,7 +70,7 @@ class ImgManipulator extends Component {
         this.scrollView.setNativeProps({ scrollEnabled: false });
       },
       onPanResponderMove: (evt, gestureState) => {
-        const { moveX, moveY, x0, y0 } = gestureState;
+        const { moveX, moveY, x0 } = gestureState;
         const moveXRound = Math.round(moveX);
         const moveYRound = Math.round(moveY);
         const x0Round = Math.round(x0);
@@ -474,7 +474,7 @@ class ImgManipulator extends Component {
     const { width, height } = this.currentSize;
     const { top, left } = this.currentPos;
     const Picker = this.createPicker();
-
+    const borderColor = this.state.isShow ? 'yellow' : 'transparent';
     return (
       <Modal
         animationType="slide"
@@ -533,7 +533,6 @@ class ImgManipulator extends Component {
                 }}
                 resizeMode="contain"
                 width={windowWidth}
-                onLoad={this.showCropper}
                 onLayout={(event) => {
                   this.maxSizes.width = event.nativeEvent.layout.width || 100;
                   this.maxSizes.height = event.nativeEvent.layout.height || 100;
@@ -554,49 +553,50 @@ class ImgManipulator extends Component {
                   backgroundColor: 'rgba(0, 0, 0, 0.3)'
                 }}
               />
-              {this.state.isShow && (
-                <View
-                  onLayout={(event) => {
-                    this.currentSize.height = Math.round(event.nativeEvent.layout.height);
-                    this.currentSize.width = Math.round(event.nativeEvent.layout.width);
-                    this.currentPos.top = Math.round(event.nativeEvent.layout.y);
-                    this.currentPos.left = Math.round(event.nativeEvent.layout.x);
-                  }}
-                  ref={(ref) => {
-                    this.square = ref;
-                  }}
-                  {...this._panResponder.panHandlers}
-                  style={{
-                    overflow: 'hidden',
-                    borderRadius: 5,
-                    borderWidth: 3,
-                    borderColor: 'yellow',
-                    flex: 1,
-                    minHeight: this.minHeight,
-                    width: width,
-                    height: height,
-                    position: 'absolute',
-                    maxHeight: this.maxSizes.height,
-                    top: top || 0,
-                    left: left || 0,
-                    zIndex: 5,
-                    maxWidth: this.maxSizes.width,
-                    backgroundColor: 'opacity',
-                  }}
-                >
-                <Image
-                  source={{ uri: uri }}
-                  ref={(ref) => {
-                    this.brightImage = ref;
-                  }}
-                  style={{
-                    width: windowWidth,
-                    height: this.maxSizes.height,
-                    transform: [{translateY: this.currentPos.top * -1}, {translateX: this.currentPos.left * -1}],
-                  }}
-                 /> 
-                </View>
-              )}
+              {/* {this.state.isShow && ( */}
+              <View
+                onLayout={(event) => {
+                  this.currentSize.height = Math.round(event.nativeEvent.layout.height);
+                  this.currentSize.width = Math.round(event.nativeEvent.layout.width);
+                  this.currentPos.top = Math.round(event.nativeEvent.layout.y);
+                  this.currentPos.left = Math.round(event.nativeEvent.layout.x);
+                }}
+                ref={(ref) => {
+                  this.square = ref;
+                }}
+                {...this._panResponder.panHandlers}
+                style={{
+                  overflow: 'hidden',
+                  borderRadius: 5,
+                  borderWidth: 3,
+                  borderColor: borderColor,
+                  flex: 1,
+                  minHeight: this.minHeight,
+                  width: width,
+                  height: height,
+                  position: 'absolute',
+                  maxHeight: this.maxSizes.height,
+                  top: top || 0,
+                  left: left || 0,
+                  zIndex: 5,
+                  maxWidth: this.maxSizes.width,
+                  backgroundColor: 'opacity',
+                }}
+              >
+              <Image
+                onLoad={this.showCropper}
+                source={{ uri: uri }}
+                ref={(ref) => {
+                  this.brightImage = ref;
+                }}
+                style={{
+                  width: windowWidth,
+                  height: this.maxSizes.height,
+                  transform: [{translateY: this.currentPos.top * -1}, {translateX: this.currentPos.left * -1}],
+                }}
+                /> 
+              </View>
+              {/* )} */}
             </View>
 
           </ScrollView>
