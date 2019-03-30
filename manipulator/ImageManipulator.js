@@ -6,15 +6,15 @@ import { Picker } from 'native-base';
 import * as Animatable from 'react-native-animatable';
 import PropTypes from 'prop-types';
 import AutoHeightImage from 'react-native-auto-height-image';
-// eslint-disable-next-line import/no-extraneous-dependencies
+
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import RNPickerSelect from 'react-native-picker-select';
 import HybridTouch from '../HybridTouch';
-// eslint-enable-next-line import/no-extraneous-dependencies
+
 import getDefaultCrop from './utils';
 
 const windowWidth = Dimensions.get('window').width;
-// const windowHeight = Dimensions.get('window').height - 20;
+
 
 const heightTopBar = 80;
 
@@ -57,9 +57,6 @@ class ImgManipulator extends Component {
     this.minHeight = 10;
     this.minWidth = 10;
 
-    // this.minHeight = squareMetrics.height;
-    // this.minWidth = squareMetrics.width;
-
     this.isResizing = false;
 
     this._panResponder = PanResponder.create({
@@ -86,7 +83,7 @@ class ImgManipulator extends Component {
           );
 
           this.setPositionForBrightImage(this.currentPos.top, this.currentPos.left);
-          
+
         } else {
           this.isResizing = true;
           let aspect = null;
@@ -193,7 +190,7 @@ class ImgManipulator extends Component {
     if (this.currentSize && imgWidthZip && imgHeightZip) {
       const { cropWidth, cropHeight } = this.calculateMetricsOfSquareCrop(imgWidthZip, imgHeightZip);
       this.setCurrentSizes(cropWidth, cropHeight);
-      // this.setMinSizes(cropWidth, cropHeight);
+
       let top = this.currentPos.top;
       let left = this.currentPos.left;
 
@@ -299,7 +296,6 @@ class ImgManipulator extends Component {
         this.setAspect(choosenAspect);
         const { width, height } = getDefaultCrop(this.maxSizes.width, this.maxSizes.height, choosenAspect[0], choosenAspect[1]);
         this.setCurrentSizes(width, height);
-        // this.setMinSizes(width, height);
 
         this.setSizesForSquareCrop(
           this.currentSize.width,
@@ -543,8 +539,6 @@ class ImgManipulator extends Component {
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  // width: 200,
-                  // height: 200,
                   width: this.maxSizes.width,
                   height: this.maxSizes.height,
                   backgroundColor: 'rgba(0, 0, 0, 0.2)'
